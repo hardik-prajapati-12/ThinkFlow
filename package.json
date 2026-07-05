@@ -1,0 +1,16 @@
+{
+  "name": "blog-app",
+  "version": "1.0.0",
+  "description": "A beautifully designed, full-stack blog platform built with **MongoDB, Express.js, Angular, and Node.js**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
