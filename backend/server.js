@@ -11,7 +11,20 @@ require('dotenv').config();
 const app = express();
 
 // ── Middleware ──────────────────────────────
-app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
+const allowedOrigins = [
+  'http://localhost:4200',
+  'https://think-flow-lac.vercel.app'
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
