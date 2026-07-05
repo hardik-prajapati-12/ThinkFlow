@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist/blog-frontend",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
