@@ -2,17 +2,16 @@
 //   MEAN Stack Blog - Main Server (server.js)
 // =============================================
 
-const express  = require('express');
+const express = require('express');
 const mongoose = require('mongoose');
-const cors     = require('cors');
-const path     = require('path');
+const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 
 // ── Middleware ──────────────────────────────
 const allowedOrigins = [
-  'http://localhost:4200',
   'https://think-flow-lac.vercel.app'
 ];
 app.use(cors({
@@ -30,19 +29,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Database Connection ─────────────────────
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/blogdb')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://Hardik:9OSc9Vni9oK0jIHd@blog-app.sizer2e.mongodb.net/?appName=blog-app')
   .then(() => console.log('✅  MongoDB connected successfully'))
   .catch(err => console.error('❌  MongoDB connection error:', err));
 
 // ── Routes ──────────────────────────────────
-app.use('/api/auth',       require('./routes/auth'));
-app.use('/api/posts',      require('./routes/posts'));
-app.use('/api/comments',   require('./routes/comments'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/posts', require('./routes/posts'));
+app.use('/api/comments', require('./routes/comments'));
 app.use('/api/categories', require('./routes/categories'));
-app.use('/api/messages',   require('./routes/messages'));   // ← contact messages
-app.use('/api/stats',      require('./routes/stats'));      // ← admin overview stats
-app.use('/api/stats',      require('./routes/stats'));       // ← admin overview
-app.use('/api/settings',   require('./routes/settings'));
+app.use('/api/messages', require('./routes/messages'));   // ← contact messages
+app.use('/api/stats', require('./routes/stats'));      // ← admin overview stats
+app.use('/api/stats', require('./routes/stats'));       // ← admin overview
+app.use('/api/settings', require('./routes/settings'));
 
 // ── Health Check ────────────────────────────
 app.get('/api/health', (req, res) => {
