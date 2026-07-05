@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Local environment variables
+.env
+
+# Media uploads (ignore all uploaded files but keep the uploads folder)
+uploads/*
+!uploads/.gitkeep
+
+# System & logs
+*.log
+.DS_Store
+Thumbs.db

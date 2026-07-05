@@ -1,0 +1,184 @@
+<!-- src/app/components/tag/tag.component.html -->
+
+<!-- Tag Hero -->
+<section class="tag-hero">
+  <div class="container">
+    <nav class="tag-breadcrumb">
+      <span (click)="goTo('/')">Home</span>
+      <span class="bc-sep">/</span>
+      <span (click)="goTo('/')">Blog</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current">#{{ tagName }}</span>
+    </nav>
+
+    <h1 class="tag-title">#{{ tagName }}</h1>
+    <p class="tag-count" *ngIf="!loading">
+      {{ total }} article{{ total !== 1 ? 's' : '' }} found
+    </p>
+  </div>
+</section>
+
+<!-- Main Layout: posts + sidebar -->
+<div class="container tag-layout">
+
+  <!-- Posts Main -->
+  <main class="tag-main">
+
+    <!-- Sort bar -->
+    <div class="tag-filter-bar" *ngIf="!loading && posts.length > 0">
+      <div class="tag-sort-pills">
+        <button class="sort-pill" [class.active]="sortBy === 'newest'" (click)="setSort('newest')">
+          🕐 Newest First
+        </button>
+        <button class="sort-pill" [class.active]="sortBy === 'popular'" (click)="setSort('popular')">
+          🔥 Most Popular
+        </button>
+      </div>
+      <span class="tag-results-count">{{ total }} result{{ total !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-center" *ngIf="loading"><div class="spinner"></div></div>
+
+    <!-- Empty state -->
+    <div class="tag-empty" *ngIf="!loading && posts.length === 0">
+      <div class="tag-empty-icon">🏷</div>
+      <h3>No articles found for <strong>#{{ tagName }}</strong></h3>
+      <p>Try a different tag or browse all articles.</p>
+      <button class="btn btn-outline" (click)="goTo('/')">Browse All Articles</button>
+    </div>
+
+    <!-- Posts Grid -->
+    <div class="tag-posts-grid" *ngIf="!loading && posts.length > 0">
+      <article class="tag-post-card fade-in"
+               *ngFor="let post of posts; let i = index"
+               [style.animation-delay]="(i * 0.06) + 's'"
+               (click)="goTo('/blog/' + post.slug)">
+
+        <!-- Image -->
+        <div class="tpc-img-link">
+          <div class="tpc-img-wrap">
+            <img [src]="getImageUrl(post.coverImage || '')"
+                 [alt]="post.title"
+                 class="tpc-img"
+                 onerror="this.src='https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80'">
+            <div class="tpc-img-overlay">
+              <span class="tpc-read-cta">Read Article →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="tpc-body">
+          <div class="tpc-top">
+            <span class="badge" *ngIf="post.category"
+                  [style.background]="post.category.color + '20'"
+                  [style.color]="post.category.color">
+              {{ post.category.icon }} {{ post.category.name }}
+            </span>
+            <span class="tpc-read-time">{{ post.readTime }} min read</span>
+          </div>
+
+          <h3 class="tpc-title">{{ post.title }}</h3>
+          <p class="tpc-excerpt">
+            {{ post.excerpt ? (post.excerpt.length > 110 ? post.excerpt.substring(0, 110) + '...' : post.excerpt) : '' }}
+          </p>
+
+          <!-- Tags on card -->
+          <div class="tpc-tags" *ngIf="post.tags && post.tags.length > 0">
+            <span class="tpc-tag"
+                  *ngFor="let tag of post.tags.slice(0,4)"
+                  [class.active-tag]="tag === tagName"
+                  (click)="goToTag(tag, $event)">
+              #{{ tag }}
+            </span>
+          </div>
+        </div>
+
+        <!-- ✅ Footer with real avatar image -->
+        <div class="tpc-footer">
+          <div class="tpc-meta">
+
+            <!-- Show real photo if avatar exists, else show initials -->
+            <ng-container *ngIf="post.author.avatar; else tagInitials">
+              <img
+                [src]="post.author.avatar.startsWith('http')
+                  ? post.author.avatar
+                  : 'http://localhost:5000' + post.author.avatar"
+                class="tpc-av tpc-av-img"
+                [alt]="post.author.username"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+              <!-- Hidden initials fallback shown via onerror if image URL is broken -->
+              <span class="tpc-av" style="display:none">
+                {{ post.author.username.charAt(0).toUpperCase() }}
+              </span>
+            </ng-container>
+
+            <!-- Initials when no avatar uploaded -->
+            <ng-template #tagInitials>
+              <span class="tpc-av">
+                {{ post.author.username.charAt(0).toUpperCase() }}
+              </span>
+            </ng-template>
+
+            <div>
+              <div class="tpc-author">{{ post.author.username }}</div>
+              <div class="tpc-date">{{ formatDate(post.createdAt) }}</div>
+            </div>
+          </div>
+          <div class="tpc-stats">
+            <span>👁 {{ post.views }}</span>
+            <span>❤ {{ post.likes.length }}</span>
+          </div>
+        </div>
+
+      </article>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1 && !loading">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="loadPosts(currentPage - 1)">← Prev</button>
+      <button class="page-btn" *ngFor="let p of getPages()"
+              [class.active]="p === currentPage" (click)="loadPosts(p)">{{ p }}</button>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="loadPosts(currentPage + 1)">Next →</button>
+    </div>
+  </main>
+
+  <!-- Sidebar -->
+  <aside class="tag-sidebar">
+
+    <!-- Popular Posts -->
+    <div class="sidebar-widget">
+      <div class="sidebar-widget-title">🔥 Popular</div>
+      <div class="popular-list">
+        <div class="popular-item"
+             *ngFor="let p of popularPosts; let i = index"
+             (click)="goTo('/blog/' + p.slug)">
+          <span class="popular-rank">{{ i + 1 < 10 ? '0' + (i + 1) : (i + 1) }}</span>
+          <div class="popular-body">
+            <div class="popular-title">
+              {{ p.title.length > 52 ? p.title.substring(0, 52) + '...' : p.title }}
+            </div>
+            <div class="popular-views">{{ p.views }} views</div>
+          </div>
+        </div>
+        <div class="popular-empty" *ngIf="popularPosts.length === 0">
+          No popular posts yet
+        </div>
+      </div>
+    </div>
+
+    <!-- Related Tags -->
+    <div class="sidebar-widget" *ngIf="allTags.length > 0">
+      <div class="sidebar-widget-title">🏷 Related Tags</div>
+      <div class="related-tags">
+        <span class="related-tag"
+              *ngFor="let tag of allTags"
+              (click)="goToTag(tag, $event)">
+          #{{ tag }}
+        </span>
+      </div>
+    </div>
+
+  </aside>
+</div>

@@ -1,0 +1,295 @@
+<!-- src/app/components/profile/profile.component.html -->
+
+<div class="profile-page">
+
+  <!-- ── Left: Profile card ─────────────────────────────────── -->
+  <aside class="profile-sidebar">
+
+    <div class="profile-card">
+
+      <!-- ── Avatar with change / remove overlay ─────────────── -->
+      <div class="profile-avatar-wrap" (click)="!avatarUploading && avatarInput.click()">
+
+        <!-- Uploading spinner -->
+        <div class="avatar-uploading-overlay" *ngIf="avatarUploading">
+          <div class="avatar-spinner"></div>
+        </div>
+
+        <!-- Photo if uploaded -->
+        <img *ngIf="avatarUrl && !avatarUploading"
+             [src]="avatarUrl"
+             [alt]="user?.username"
+             class="profile-avatar-img"
+             onerror="this.style.display='none'">
+
+        <!-- Initials fallback -->
+        <div class="profile-avatar"
+             *ngIf="!avatarUrl && !avatarUploading">
+          {{ getInitials() }}
+        </div>
+
+        <!-- Hover overlay — only shown when not uploading -->
+        <div class="avatar-overlay" *ngIf="!avatarUploading">
+          <span class="avatar-overlay-icon">📷</span>
+          <span class="avatar-overlay-text">{{ avatarUrl ? 'Change' : 'Add Photo' }}</span>
+        </div>
+      </div>
+
+      <!-- Hidden file input -->
+      <input type="file"
+             #avatarInput
+             accept="image/jpeg,image/png,image/webp,image/gif"
+             hidden
+             (change)="onAvatarChange($event)">
+
+      <!-- Remove photo button — only visible when avatar exists -->
+      <button class="avatar-remove-btn"
+              *ngIf="avatarUrl && !avatarUploading"
+              (click)="onAvatarRemove()"
+              title="Remove profile photo">
+        ✕ Remove Photo
+      </button>
+
+      <!-- Avatar error -->
+      <div class="avatar-error" *ngIf="avatarError">{{ avatarError }}</div>
+
+      <!-- Hint -->
+      <p class="avatar-hint">JPG, PNG or WebP · max 2 MB</p>
+
+      <!-- Name & Role -->
+      <div class="profile-name">{{ user?.username }}</div>
+      <div class="profile-role-badge" [class]="getRoleClass()">
+        {{ getRoleLabel() }}
+      </div>
+
+      <!-- Bio -->
+      <p class="profile-bio" *ngIf="user?.bio">{{ user?.bio }}</p>
+      <p class="profile-bio empty" *ngIf="!user?.bio">No bio yet — tell us about yourself!</p>
+
+      <!-- Meta -->
+      <div class="profile-meta">
+        <div class="profile-meta-item">
+          <span class="profile-meta-icon">📅</span>
+          <span>Member since {{ getMemberSince() }}</span>
+        </div>
+        <div class="profile-meta-item" *ngIf="auth.isAuthorOrAdmin">
+          <span class="profile-meta-icon">📄</span>
+          <span>{{ myPosts.length }} article{{ myPosts.length !== 1 ? 's' : '' }} published</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="profile-nav">
+      <button class="profile-nav-btn" [class.active]="activeTab === 'info'"
+              (click)="switchTab('info')">
+        <span>👤</span> Personal Info
+      </button>
+      <button class="profile-nav-btn" [class.active]="activeTab === 'security'"
+              (click)="switchTab('security')">
+        <span>🔒</span> Security
+      </button>
+      <button class="profile-nav-btn" *ngIf="auth.isAuthorOrAdmin"
+              [class.active]="activeTab === 'posts'"
+              (click)="switchTab('posts')">
+        <span>📄</span> My Articles
+        <span class="profile-nav-badge" *ngIf="myPosts.length > 0">{{ myPosts.length }}</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- ── Right: Tab content ─────────────────────────────────── -->
+  <main class="profile-main">
+
+    <!-- ══ Personal Info ══════════════════════════════════════ -->
+    <section *ngIf="activeTab === 'info'" class="profile-section fade-in">
+      <div class="profile-section-header">
+        <div>
+          <h2 class="profile-section-title">Personal Information</h2>
+          <p class="profile-section-sub">Update your display name and bio.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-success" *ngIf="profileSuccess">✓ {{ profileSuccess }}</div>
+      <div class="alert alert-error"   *ngIf="profileError">✕ {{ profileError }}</div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+
+        <!-- Username -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username <span class="required">*</span></label>
+            <input type="text" class="form-control" formControlName="username"
+                   placeholder="Your display name"
+                   [class.error]="hasError(profileForm, 'username')">
+            <div class="form-error" *ngIf="hasError(profileForm, 'username')">
+              Username must be 3–30 characters.
+            </div>
+            <div class="form-hint">This is how other readers see you.</div>
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea class="form-control profile-bio-input" formControlName="bio"
+                    rows="4"
+                    placeholder="Tell readers a little about yourself…"
+                    [class.error]="hasError(profileForm, 'bio')"></textarea>
+          <div class="form-hint">
+            {{ profileForm.get('bio')?.value?.length || 0 }}/200 characters
+          </div>
+          <div class="form-error" *ngIf="hasError(profileForm, 'bio')">
+            Bio cannot exceed 200 characters.
+          </div>
+        </div>
+
+        <!-- Email (read-only) -->
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <div class="form-control readonly-field">{{ user?.email }}</div>
+          <div class="form-hint">Email address cannot be changed. Contact support if needed.</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary save-btn" [disabled]="profileSaving">
+            <span class="btn-spinner" *ngIf="profileSaving"></span>
+            {{ profileSaving ? 'Saving…' : '✓ Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ══ Security ═══════════════════════════════════════════ -->
+    <section *ngIf="activeTab === 'security'" class="profile-section fade-in">
+      <div class="profile-section-header">
+        <div>
+          <h2 class="profile-section-title">Security</h2>
+          <p class="profile-section-sub">Change your account password.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-success" *ngIf="passwordSuccess">✓ {{ passwordSuccess }}</div>
+      <div class="alert alert-error"   *ngIf="passwordError">✕ {{ passwordError }}</div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="profile-form">
+
+        <div class="form-group">
+          <label class="form-label">Current Password <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input [type]="showCurrent ? 'text' : 'password'"
+                   class="form-control" formControlName="currentPassword"
+                   placeholder="Enter your current password"
+                   autocomplete="current-password">
+            <button type="button" class="toggle-pw" (click)="showCurrent = !showCurrent">
+              {{ showCurrent ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <div class="form-error" *ngIf="hasError(passwordForm, 'currentPassword')">
+            Current password is required.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Password <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input [type]="showNew ? 'text' : 'password'"
+                   class="form-control" formControlName="newPassword"
+                   placeholder="Min. 6 characters"
+                   autocomplete="new-password">
+            <button type="button" class="toggle-pw" (click)="showNew = !showNew">
+              {{ showNew ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <div class="form-error" *ngIf="hasError(passwordForm, 'newPassword')">
+            New password must be at least 6 characters.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm New Password <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input [type]="showConfirm ? 'text' : 'password'"
+                   class="form-control" formControlName="confirmPassword"
+                   placeholder="Repeat your new password"
+                   autocomplete="new-password">
+            <button type="button" class="toggle-pw" (click)="showConfirm = !showConfirm">
+              {{ showConfirm ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <div class="form-error"
+               *ngIf="hasError(passwordForm, 'confirmPassword') ||
+                      (passwordForm.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched)">
+            Passwords do not match.
+          </div>
+        </div>
+
+        <div class="pw-tips">
+          <div class="pw-tip">💡 Use at least 8 characters with a mix of letters, numbers, and symbols.</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary save-btn" [disabled]="passwordSaving">
+            <span class="btn-spinner" *ngIf="passwordSaving"></span>
+            {{ passwordSaving ? 'Saving…' : '🔒 Update Password' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ══ My Articles ════════════════════════════════════════ -->
+    <section *ngIf="activeTab === 'posts' && auth.isAuthorOrAdmin" class="profile-section fade-in">
+      <div class="profile-section-header">
+        <div>
+          <h2 class="profile-section-title">My Articles</h2>
+          <p class="profile-section-sub">All posts you have written.</p>
+        </div>
+      </div>
+
+      <div class="loading-center" *ngIf="postsLoading"><div class="spinner"></div></div>
+
+      <div class="profile-posts-empty" *ngIf="!postsLoading && myPosts.length === 0">
+        <span>📝</span>
+        <p>You haven't written any articles yet.</p>
+        <button class="btn btn-primary" (click)="router.navigate(['/admin'])">Write Your First Article</button>
+      </div>
+
+      <div class="profile-posts-list" *ngIf="!postsLoading && myPosts.length > 0">
+        <div class="profile-post-item" *ngFor="let post of myPosts"
+             (click)="goToPost(post.slug)">
+          <div class="ppi-img-wrap" *ngIf="post.coverImage">
+            <img [src]="post.coverImage.startsWith('http') ? post.coverImage : 'http://localhost:5000' + post.coverImage"
+                 [alt]="post.title" class="ppi-img"
+                 onerror="this.style.display='none'">
+          </div>
+          <div class="ppi-body">
+            <div class="ppi-top">
+              <span class="badge" *ngIf="post.category"
+                    [style.background]="post.category.color + '20'"
+                    [style.color]="post.category.color">
+                {{ post.category.icon }} {{ post.category.name }}
+              </span>
+              <span class="status-pill" [class.published]="post.status === 'published'">
+                {{ post.status }}
+              </span>
+            </div>
+            <h4 class="ppi-title">{{ post.title }}</h4>
+            <p class="ppi-excerpt" *ngIf="post.excerpt">
+              {{ post.excerpt.length > 100 ? post.excerpt.substring(0, 100) + '...' : post.excerpt }}
+            </p>
+            <div class="ppi-meta">
+              <span>{{ formatDate(post.createdAt) }}</span>
+              <span class="meta-dot">·</span>
+              <span>{{ post.readTime }} min read</span>
+              <span class="meta-dot">·</span>
+              <span>👁 {{ post.views }}</span>
+              <span class="meta-dot">·</span>
+              <span>❤ {{ post.likes && post.likes.length > 0 ? post.likes.length : 0 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>

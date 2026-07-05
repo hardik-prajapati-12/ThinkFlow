@@ -1,0 +1,1162 @@
+<!-- src/app/components/admin/admin.component.html -->
+<div class="admin-page">
+
+  <!-- ═══ SIDEBAR ════════════════════════════════════════════ -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <span><i class="fi fi-rr-settings"></i></span>
+      <span>{{ auth.isAdmin ? 'Dashboard' : 'My Dashboard' }}</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Overview -->
+      <button class="sidebar-link"
+              [class.active]="activeTab === 'overview'" (click)="switchTab('overview')">
+        <span class="sidebar-icon"><i class="fi fi-rr-chart-histogram"></i></span> Overview
+      </button>
+
+      <!-- Posts -->
+      <button class="sidebar-link" [class.active]="activeTab === 'posts'" (click)="switchTab('posts')">
+        <span class="sidebar-icon"><i class="fi fi-rr-document"></i></span>
+        {{ auth.isAdmin ? 'All Posts' : 'My Posts' }}
+        <span class="sidebar-badge">{{ posts.length }}</span>
+      </button>
+
+      <!-- Create -->
+      <button class="sidebar-link" [class.active]="activeTab === 'create'" (click)="switchTab('create')">
+        <span class="sidebar-icon"><i class="fi fi-rr-edit"></i></span>
+        {{ editingPost ? 'Edit Post' : 'New Post' }}
+      </button>
+
+      <!-- Comments -->
+      <button class="sidebar-link" [class.active]="activeTab === 'comments'" (click)="switchTab('comments')">
+        <span class="sidebar-icon"><i class="fi fi-rr-comment"></i></span> Comments
+        <span class="sidebar-badge sidebar-badge-alert"
+              *ngIf="commentStats.hidden > 0">
+          {{ commentStats.hidden }}
+        </span>
+        <span class="sidebar-badge"
+              *ngIf="commentStats.hidden === 0 && commentStats.total > 0">
+          {{ commentStats.total }}
+        </span>
+      </button>
+
+      <!-- Categories — admin only -->
+      <button class="sidebar-link" *ngIf="auth.isAdmin"
+              [class.active]="activeTab === 'categories'" (click)="switchTab('categories')">
+        <span class="sidebar-icon"><i class="fi fi-rr-folder"></i></span> Categories
+        <span class="sidebar-badge">{{ categories.length }}</span>
+      </button>
+
+      <!-- Users — admin only -->
+      <button class="sidebar-link" *ngIf="auth.isAdmin"
+              [class.active]="activeTab === 'users'" (click)="switchTab('users')">
+        <span class="sidebar-icon"><i class="fi fi-rr-users-alt"></i></span> Users
+        <span class="sidebar-badge">{{ users.length }}</span>
+      </button>
+
+      <!-- Messages — admin only -->
+      <button class="sidebar-link messages-btn" *ngIf="auth.isAdmin"
+              [class.active]="activeTab === 'messages'" (click)="switchTab('messages')">
+        <span class="sidebar-icon"><i class="fi fi-rr-envelope"></i></span> Messages
+        <span class="sidebar-badge sidebar-badge-unread"
+              *ngIf="msgStats.unread > 0">
+          {{ msgStats.unread }}
+        </span>
+      </button>
+      <button class="sidebar-link" *ngIf="auth.isAdmin"
+              [class.active]="activeTab === 'social'" (click)="switchTab('social')">
+        <span class="sidebar-icon"><i class="fi fi-rr-settings"></i></span> Settings
+        <span class="sidebar-badge">{{ socialLinks.length }}</span>
+      </button>
+    </nav>
+
+    <!-- ✅ FIXED: Sidebar footer — shows real avatar photo when uploaded -->
+    <div class="sidebar-footer">
+      <div class="admin-user">
+
+        <!-- Real photo when avatar exists -->
+        <ng-container *ngIf="auth.currentUser?.avatar; else sidebarInitials">
+          <img
+            [src]="auth.currentUser?.avatar?.startsWith('http')
+              ? auth.currentUser?.avatar
+              : 'http://localhost:5000' + auth.currentUser?.avatar"
+            class="admin-avatar-img"
+            [alt]="auth.currentUser?.username"
+            onerror="this.style.display='none'">
+        </ng-container>
+
+        <!-- Initials fallback when no photo is set -->
+        <ng-template #sidebarInitials>
+          <span class="admin-avatar">
+            {{ auth.currentUser?.username?.charAt(0)?.toUpperCase() }}
+          </span>
+        </ng-template>
+
+        <div>
+          <div class="admin-uname">{{ auth.currentUser?.username }}</div>
+          <div class="admin-role" [class]="'role-' + auth.currentUser?.role">
+            <i class="fi" [class.fi-rr-crown]="auth.currentUser?.role === 'admin'" [class.fi-rr-pencil]="auth.currentUser?.role === 'author'" [class.fi-rr-user]="auth.currentUser?.role === 'user'"></i>
+            {{ auth.currentUser?.role === 'admin' ? 'Admin' : auth.currentUser?.role === 'author' ? 'Author' : 'User' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ════════════════════════════════════════ -->
+  <main class="admin-main">
+
+    <!-- Toast Notifications -->
+    <div class="toast-container">
+      <div class="toast toast-success" *ngIf="successMsg">
+        <div class="toast-icon"><i class="fi fi-rr-check"></i></div>
+        <div class="toast-body">{{ successMsg }}</div>
+        <button type="button" class="toast-close" (click)="clearMessages()" title="Dismiss">
+          <i class="fi fi-rr-cross-small"></i>
+        </button>
+      </div>
+
+      <div class="toast toast-error" *ngIf="errorMsg && !errorMsg.includes('denied') && !errorMsg.includes('role')">
+        <div class="toast-icon"><i class="fi fi-rr-exclamation"></i></div>
+        <div class="toast-body">{{ errorMsg }}</div>
+        <button type="button" class="toast-close" (click)="clearMessages()" title="Dismiss">
+          <i class="fi fi-rr-cross-small"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Critical Auth Error Block (Only if access/role denied) -->
+    <div class="error-block fade-in" *ngIf="errorMsg && (errorMsg.includes('denied') || errorMsg.includes('role'))">
+      <div class="error-block-icon">⚠</div>
+      <div class="error-block-body">
+        <div class="error-block-msg">{{ errorMsg }}</div>
+        <div class="error-block-hint">
+          <strong>Fix:</strong> Sign out below and sign back in with your admin account
+          Then run <code>node seed.js</code> if you haven't already.
+        </div>
+      </div>
+      <div class="error-block-actions">
+        <button class="btn btn-outline" style="font-size:.8rem;padding:7px 14px" (click)="loadData()">↺ Retry</button>
+        <a routerLink="/login" class="btn btn-primary" style="font-size:.8rem;padding:7px 14px"
+           (click)="auth.logout()">Sign Out & Login</a>
+      </div>
+    </div>
+
+    <!-- ══════════ OVERVIEW (Admin) ═══════════════════════ -->
+    <section *ngIf="activeTab === 'overview' && auth.isAdmin" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">Dashboard Overview</h2>
+          <p class="admin-page-sub">A live snapshot of your entire blog platform.</p>
+        </div>
+        <button class="btn btn-ghost" (click)="loadOverview()"
+                style="padding:8px 18px;border:1px solid var(--border);border-radius:var(--radius-pill);font-size:.82rem">
+          <i class="fi fi-rr-refresh" style="margin-right: 4px;"></i> Refresh
+        </button>
+      </div>
+
+      <div class="loading-center" *ngIf="overviewLoading"><div class="spinner"></div></div>
+
+      <ng-container *ngIf="!overviewLoading && overviewStats">
+        <div class="ov-grid">
+          <div class="ov-card pub">
+            <div class="ov-icon"><i class="fi fi-rr-document"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.publishedPosts }}</div>
+              <div class="ov-label">Published Posts</div>
+            </div>
+            <span class="ov-badge pub">↑ Published</span>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon views"><i class="fi fi-rr-eye"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ formatNum(overviewStats.totalViews) }}</div>
+              <div class="ov-label">Total Views</div>
+            </div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon users"><i class="fi fi-rr-users-alt"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.totalUsers }}</div>
+              <div class="ov-label">Registered Users</div>
+            </div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon approved"><i class="fi fi-rr-check"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.visibleComments }}</div>
+              <div class="ov-label">Approved Comments</div>
+            </div>
+            <span class="ov-badge approved">✓ Approved</span>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon hidden-i"><i class="fi fi-rr-ban"></i></div>
+            <div class="ov-body">
+              <div class="ov-num danger-num">{{ overviewStats.hiddenComments }}</div>
+              <div class="ov-label">Hidden Comments</div>
+            </div>
+            <span class="ov-badge danger" *ngIf="overviewStats.hiddenComments > 0">✕ Hidden</span>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon likes"><i class="fi fi-sr-heart"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.totalLikes }}</div>
+              <div class="ov-label">Post Likes</div>
+            </div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon msg"><i class="fi fi-rr-envelope"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.unreadMessages }}</div>
+              <div class="ov-label">Unread Messages</div>
+            </div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon draft"><i class="fi fi-rr-document-signed"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.draftPosts }}</div>
+              <div class="ov-label">Draft Posts</div>
+            </div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-icon avg"><i class="fi fi-rr-chart-line-up"></i></div>
+            <div class="ov-body">
+              <div class="ov-num">{{ overviewStats.avgViews }}</div>
+              <div class="ov-label">Avg. Views / Post</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ov-bottom">
+          <div class="ov-panel">
+            <div class="ov-panel-hdr"><i class="fi fi-sr-flame" style="color: #ff5722; margin-right: 8px;"></i> Top Posts by Views</div>
+            <ng-container *ngIf="topPosts.length > 0; else noTopPosts">
+              <div class="ov-row" *ngFor="let p of topPosts; let i = index">
+                <span class="ov-rank">{{ (i + 1) < 10 ? '0' + (i + 1) : (i + 1) }}</span>
+                <div class="ov-row-body">
+                  <a [routerLink]="['/blog', p.slug]" target="_blank" class="ov-row-title">
+                    {{ p.title | slice:0:55 }}{{ p.title.length > 55 ? '...' : '' }}
+                  </a>
+                  <span class="ov-row-meta">{{ p.views }} views · ❤ {{ p.likes }}</span>
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #noTopPosts>
+              <div class="ov-empty">No published posts yet</div>
+            </ng-template>
+          </div>
+
+          <div class="ov-panel">
+            <div class="ov-panel-hdr"><i class="fi fi-rr-clock" style="margin-right: 8px;"></i> Recent Posts</div>
+            <ng-container *ngIf="recentPosts.length > 0; else noRecent">
+                <div class="ov-row ov-row-clickable" *ngFor="let p of recentPosts"
+      (click)="openPostInNewTab(p.slug)">
+                <span class="ov-row-cat-icon"><ng-container *ngIf="p.category?.icon; else defaultPostIcon">{{ p.category.icon }}</ng-container><ng-template #defaultPostIcon><i class="fi fi-rr-document"></i></ng-template></span>
+                  <div class="ov-row-body">
+                  <div class="ov-row-title">{{ p.title | slice:0:45 }}{{ p.title.length > 45 ? '...' : '' }}</div>
+    <span class="ov-row-meta">{{ p.author?.username }} · {{ formatDate(p.createdAt) }}</span>
+  </div>
+  <span class="status-pill" [class.published]="p.status === 'published'">{{ p.status }}</span>
+</div>
+            </ng-container>
+            <ng-template #noRecent>
+              <div class="ov-empty">No posts yet</div>
+            </ng-template>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ══════════ AUTHOR INSIGHTS ══════════════════════════ -->
+    <section *ngIf="activeTab === 'overview' && auth.isAuthor" class="author-insights fade-in">
+      <div class="loading-center" *ngIf="insightsLoading"><div class="spinner"></div></div>
+      <ng-container *ngIf="!insightsLoading && authorInsights">
+        <div class="ai-header">
+          <div class="ai-header-left">
+            <div class="ai-avatar">{{ auth.currentUser?.username?.charAt(0)?.toUpperCase() }}</div>
+            <div>
+              <h2 class="ai-welcome">Welcome back, {{ auth.currentUser?.username }} <i class="fi fi-rr-pencil" style="font-size: 1.1rem; margin-left: 4px;"></i></h2>
+              <p class="ai-role">Author · ThinkFlow</p>
+            </div>
+          </div>
+          <button class="btn btn-primary ai-new-btn" (click)="switchTab('create')">+ New Post</button>
+        </div>
+
+        <div class="ai-stats">
+          <div class="ai-stat-card">
+            <div class="ai-stat-icon pub"><i class="fi fi-rr-document"></i></div>
+            <div class="ai-stat-num">{{ authorInsights.published }}</div>
+            <div class="ai-stat-label">Published Posts</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-icon views"><i class="fi fi-rr-eye"></i></div>
+            <div class="ai-stat-num">{{ authorInsights.totalViews }}</div>
+            <div class="ai-stat-label">Total Views</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-icon likes"><i class="fi fi-sr-heart"></i></div>
+            <div class="ai-stat-num">{{ authorInsights.totalLikes }}</div>
+            <div class="ai-stat-label">Total Likes</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-icon avg"><i class="fi fi-rr-chart-line-up"></i></div>
+            <div class="ai-stat-num">{{ authorInsights.avgViews }}</div>
+            <div class="ai-stat-label">Avg. Views / Post</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-icon draft"><i class="fi fi-rr-document-signed"></i></div>
+            <div class="ai-stat-num">{{ authorInsights.drafts }}</div>
+            <div class="ai-stat-label">Draft Posts</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-icon cmt"><i class="fi fi-rr-comment"></i></div>
+            <div class="ai-stat-num">{{ commentStats.total }}</div>
+            <div class="ai-stat-label">Post Comments</div>
+          </div>
+        </div>
+
+        <div class="ai-bottom">
+          <div class="ai-panel">
+            <div class="ai-panel-hdr"><i class="fi fi-sr-flame" style="color: #ff5722; margin-right: 8px;"></i> Your Top Posts</div>
+            <ng-container *ngIf="authorInsights.topPosts.length > 0; else noTop">
+              <div class="ai-row" *ngFor="let p of authorInsights.topPosts; let i = index"
+                   (click)="goToPost(p)">
+                <span class="ai-rank">{{ i + 1 < 10 ? '0' + (i + 1) : (i + 1) }}</span>
+                <div class="ai-row-body">
+                  <div class="ai-row-title">{{ p.title | slice:0:50 }}{{ p.title.length > 50 ? '...' : '' }}</div>
+                  <span class="ai-row-meta">{{ p.views }} views · ❤ {{ p.likes?.length || 0 }}</span>
+                </div>
+                <span class="status-pill" [class.published]="p.status === 'published'">{{ p.status }}</span>
+              </div>
+            </ng-container>
+            <ng-template #noTop>
+              <div class="ai-empty">No published posts yet.<br>
+                <button class="btn btn-outline" style="margin-top:12px;font-size:.8rem;padding:7px 16px"
+                        (click)="switchTab('create')">Write your first article →</button>
+              </div>
+            </ng-template>
+          </div>
+
+          <div class="ai-panel">
+            <div class="ai-panel-hdr"><i class="fi fi-rr-clock" style="margin-right: 8px;"></i> Recent Posts</div>
+            <ng-container *ngIf="authorInsights.recentPosts.length > 0; else noRecent">
+              <div class="ai-row" *ngFor="let p of authorInsights.recentPosts" (click)="goToPost(p)">
+                <span class="ai-row-cat"><ng-container *ngIf="p.category?.icon; else defaultPostIcon">{{ p.category.icon }}</ng-container><ng-template #defaultPostIcon><i class="fi fi-rr-document"></i></ng-template></span>
+                <div class="ai-row-body">
+                  <div class="ai-row-title">{{ p.title | slice:0:45 }}{{ p.title.length > 45 ? '...' : '' }}</div>
+                  <span class="ai-row-meta">{{ formatDate(p.createdAt) }}</span>
+                </div>
+                <span class="status-pill" [class.published]="p.status === 'published'">{{ p.status }}</span>
+              </div>
+            </ng-container>
+            <ng-template #noRecent>
+              <div class="ai-empty">No posts yet.</div>
+            </ng-template>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ══════════ POSTS LIST ══════════════════════════════ -->
+    <section *ngIf="activeTab === 'posts'" class="fade-in posts-tab-section">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">{{ auth.isAdmin ? 'All Posts' : 'My Posts' }}</h2>
+          <p class="admin-page-sub">
+            {{ auth.isAdmin ? 'Manage all blog content.' : 'Manage your own articles.' }}
+          </p>
+        </div>
+        <button class="btn btn-primary" (click)="switchTab('create')">+ New Post</button>
+      </div>
+
+      <div class="loading-center" *ngIf="loading"><div class="spinner"></div></div>
+
+      <div class="posts-table-wrap" *ngIf="!loading">
+        <table class="posts-table" *ngIf="posts.length > 0; else noPosts">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Title</th>
+              <th *ngIf="auth.isAdmin">Author</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Views</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let post of posts" class="table-row">
+              <td class="td-image">
+                <div class="post-img-thumb">
+                  <img *ngIf="post.coverImage; else noThumb" 
+                       [src]="post.coverImage.startsWith('http') ? post.coverImage : 'http://localhost:5000' + post.coverImage" 
+                       class="thumb-img" 
+                       alt="Thumb">
+                  <ng-template #noThumb>
+                    <div class="thumb-fallback">
+                      <i class="fi fi-rr-picture"></i>
+                    </div>
+                  </ng-template>
+                </div>
+              </td>
+              <td class="td-title">
+                <div class="post-title-text">{{ post.title }}</div>
+              </td>
+              <td *ngIf="auth.isAdmin">
+                <div class="post-author-chip">
+                  <span class="chip-av">{{ post.author.username.charAt(0).toUpperCase() }}</span>
+                  <span>{{ post.author.username }}</span>
+                  <span class="chip-role" [class]="'role-' + post.author.role">
+                    <i class="fi" [class.fi-rr-crown]="post.author.role === 'admin'" [class.fi-rr-pencil]="post.author.role === 'author'" [class.fi-rr-user]="post.author.role === 'user'"></i>
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span class="badge" *ngIf="post.category">{{ post.category.name }}</span>
+                <span class="text-muted" *ngIf="!post.category">—</span>
+              </td>
+              <td>
+                <span class="status-pill" [class.published]="post.status === 'published'">
+                  {{ post.status }}
+                </span>
+              </td>
+              <td class="td-views">{{ post.views }}</td>
+              <td class="td-date">{{ formatDate(post.createdAt) }}</td>
+              <td>
+                <div class="table-actions">
+                  <a [routerLink]="['/blog', post.slug]" target="_blank" class="icon-btn" title="View"><i class="fi fi-rr-eye"></i></a>
+                  <button class="icon-btn" (click)="editPost(post)" title="Edit"><i class="fi fi-rr-edit"></i></button>
+                  <button class="icon-btn danger" (click)="deletePost(post._id)" title="Delete"><i class="fi fi-rr-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ng-template #noPosts>
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fi fi-rr-document"></i></div>
+            <h3>{{ auth.isAdmin ? 'No posts yet' : 'You have no posts yet' }}</h3>
+            <p>{{ auth.isAdmin ? 'Create the first blog post.' : 'Start writing your first article.' }}</p>
+            <button class="btn btn-primary" (click)="switchTab('create')">+ Create Post</button>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+
+    <!-- ══════════ CREATE / EDIT POST ═════════════════════ -->
+    <section *ngIf="activeTab === 'create'" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">{{ editingPost ? 'Edit Post' : 'Create New Post' }}</h2>
+          <p class="admin-page-sub">{{ editingPost ? 'Update your article.' : 'Write and publish a new article.' }}</p>
+        </div>
+        <button class="btn btn-ghost" (click)="switchTab('posts')">← Back</button>
+      </div>
+
+      <form [formGroup]="postForm" (ngSubmit)="submitPost()" class="post-form">
+        <div class="post-form-grid">
+          <div class="form-main">
+            <div class="form-group">
+              <label class="form-label">Post Title *</label>
+              <input type="text" class="form-control form-control-lg" formControlName="title"
+                     placeholder="An engaging title...">
+              <div class="form-error" *ngIf="hasError('title')">Title must be at least 5 characters.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">
+                Content *
+                <span class="label-hint">(HTML or plain text — both render beautifully)</span>
+              </label>
+              <textarea class="form-control content-editor" formControlName="content"
+                        placeholder="Write your article here..."></textarea>
+              <div class="content-format-guide">
+                <div class="fmt-guide-title">✦ Formatting Tips</div>
+                <div class="fmt-guide-items">
+                  <span class="fmt-item"><code>- item</code> → bullet list</span>
+                  <span class="fmt-item"><code>HEADING TEXT</code> → auto h2</span>
+                  <span class="fmt-item"><code>&lt;h2&gt;</code> → section heading</span>
+                  <span class="fmt-item"><code>&lt;blockquote&gt;</code> → styled quote</span>
+                  <span class="fmt-item"><code>&lt;strong&gt;</code> → bold text</span>
+                  <span class="fmt-item">Empty line → new paragraph</span>
+                </div>
+              </div>
+              <div class="form-error" *ngIf="hasError('content')">Content must be at least 20 characters.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Excerpt <span class="label-hint">(auto-generated if empty)</span></label>
+              <textarea class="form-control" formControlName="excerpt" rows="3"
+                        placeholder="Short summary shown on post cards..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-sidebar">
+            <div class="form-box">
+              <h4 class="form-box-title">Publish Settings</h4>
+              <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-control" formControlName="status">
+                  <option value="draft">📝 Draft</option>
+                  <option value="published">🌐 Published</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary w-full" [disabled]="saving">
+                {{ saving ? 'Saving...' : (editingPost ? '💾 Update Post' : '🚀 Publish Post') }}
+              </button>
+            </div>
+
+            <div class="form-box">
+              <h4 class="form-box-title">Cover Image</h4>
+              <div class="img-upload-area" (click)="fileInput.click()" [class.has-image]="previewUrl">
+                <img *ngIf="previewUrl" [src]="previewUrl" alt="Preview" class="img-preview">
+                <div class="img-upload-placeholder" *ngIf="!previewUrl">
+                  <span>🖼</span>
+                  <span>Click to upload</span>
+                  <span class="hint">JPG, PNG — max 5MB</span>
+                </div>
+              </div>
+              <input type="file" id="coverImageInput" #fileInput accept="image/*" hidden
+                     (change)="onFileChange($event)">
+              <div class="img-remove-row" *ngIf="previewUrl">
+                <span class="img-preview-name">
+                  {{ selectedFile ? selectedFile.name : 'Current cover image' }}
+                </span>
+                <button type="button" class="img-remove-btn" (click)="removeImage()">✕ Remove Image</button>
+              </div>
+              <div class="img-removed-notice" *ngIf="removeCoverImage && !previewUrl">
+                ⚠ Cover image will be removed when you save.
+              </div>
+            </div>
+
+            <div class="form-box">
+              <h4 class="form-box-title">Category</h4>
+              <select class="form-control" formControlName="category">
+                <option value="">— No category —</option>
+                <option *ngFor="let cat of categories" [value]="cat._id">
+                  {{ cat.icon }} {{ cat.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-box">
+              <h4 class="form-box-title">Tags</h4>
+              <input type="text" class="form-control" formControlName="tags"
+                     placeholder="tech, design, tutorial (comma-separated)">
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- ══════════ CATEGORIES (Admin only) ════════════════ -->
+    <section *ngIf="activeTab === 'categories' && auth.isAdmin" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">Categories</h2>
+          <p class="admin-page-sub">Organize your content with categories.</p>
+        </div>
+      </div>
+
+      <div class="categories-layout">
+        <div class="form-box create-cat-box">
+          <h4 class="form-box-title">New Category</h4>
+          <form [formGroup]="categoryForm" (ngSubmit)="submitCategory()">
+            <div class="form-group">
+              <label class="form-label">Name *</label>
+              <input type="text" class="form-control" formControlName="name" placeholder="e.g., Technology">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-control" formControlName="description" placeholder="Short description">
+            </div>
+            <div class="cat-form-row">
+              <div class="form-group">
+                <label class="form-label">Icon</label>
+                <input type="text" class="form-control" formControlName="icon" placeholder="📝">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Color</label>
+                <input type="color" class="form-control color-picker" formControlName="color">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-full">+ Create Category</button>
+          </form>
+        </div>
+
+        <div class="categories-grid">
+          <div class="category-card"
+               *ngFor="let cat of categories"
+               [class.category-card-editing]="editingCategory?._id === cat._id">
+
+            <!-- Normal display view -->
+            <ng-container *ngIf="editingCategory?._id !== cat._id">
+              <div class="cat-card-top">
+                <span class="cat-icon-lg"
+                      [style.background]="cat.color + '20'"
+                      [style.border-color]="cat.color + '40'">{{ cat.icon }}</span>
+                <div class="cat-info">
+                  <div class="cat-name">{{ cat.name }}</div>
+                  <div class="cat-desc">{{ cat.description || 'No description' }}</div>
+                </div>
+              </div>
+              <div class="cat-card-actions">
+                <span class="cat-color-dot" [style.background]="cat.color"></span>
+                <div class="cat-action-btns">
+                  <button class="icon-btn cat-edit-btn" (click)="startEditCategory(cat)" title="Edit category"><i class="fi fi-rr-edit"></i></button>
+                  <button class="icon-btn danger" (click)="deleteCategory(cat._id)" title="Delete category"><i class="fi fi-rr-trash"></i></button>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Inline edit form -->
+            <ng-container *ngIf="editingCategory?._id === cat._id">
+              <div class="cat-edit-header">
+                <span class="cat-edit-label"><i class="fi fi-rr-edit" style="margin-right: 4px;"></i> Editing</span>
+                <span class="cat-edit-name">{{ cat.name }}</span>
+              </div>
+
+              <form [formGroup]="editCategoryForm"
+                    (ngSubmit)="submitEditCategory()"
+                    class="cat-edit-form">
+                <div class="cat-edit-row">
+                  <div class="form-group">
+                    <label class="form-label-sm">Icon</label>
+                    <input type="text" formControlName="icon"
+                           class="form-control form-control-sm"
+                           maxlength="4" placeholder="📝">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label-sm">Color</label>
+                    <input type="color" formControlName="color"
+                           class="form-control color-picker-sm">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label-sm">Name <span class="field-required">*</span></label>
+                  <input type="text" formControlName="name"
+                         class="form-control form-control-sm"
+                         placeholder="Category name" maxlength="60">
+                  <span class="field-error"
+                        *ngIf="editCategoryForm.get('name')?.invalid && editCategoryForm.get('name')?.touched">
+                    Name is required.
+                  </span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label-sm">Description</label>
+                  <input type="text" formControlName="description"
+                         class="form-control form-control-sm"
+                         placeholder="Short description (optional)" maxlength="120">
+                </div>
+
+                <div class="cat-edit-actions">
+                  <button type="submit"
+                          class="btn btn-primary btn-sm"
+                          [disabled]="savingCategory || editCategoryForm.invalid">
+                    <span *ngIf="savingCategory">Saving…</span>
+                    <span *ngIf="!savingCategory">✓ Save</span>
+                  </button>
+                  <button type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="cancelEditCategory()">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </ng-container>
+          </div>
+
+          <div class="empty-state sm" *ngIf="categories.length === 0">
+            <span><i class="fi fi-rr-folder"></i></span><p>No categories yet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ USERS (Admin only) ═════════════════════ -->
+    <section *ngIf="activeTab === 'users' && auth.isAdmin" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">User Management</h2>
+          <p class="admin-page-sub">Manage roles, status, and accounts for all registered users.</p>
+        </div>
+        <div class="users-summary">
+          <span class="summary-chip">
+            👑 {{ users | roleFilter:'admin' }} Admins
+          </span>
+          <span class="summary-chip author">
+            ✍ {{ users | roleFilter:'author' }} Authors
+          </span>
+          <span class="summary-chip user">
+            👤 {{ users | roleFilter:'user' }} Users
+          </span>
+        </div>
+      </div>
+
+      <div class="loading-center" *ngIf="usersLoading"><div class="spinner"></div></div>
+
+      <div class="users-table-wrap" *ngIf="!usersLoading">
+        <table class="posts-table" *ngIf="users.length > 0; else noUsers">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of users" class="table-row" [class.inactive-row]="!u.isActive">
+              <td>
+                <div class="user-info-cell">
+                  <span class="user-table-av" [class]="'av-' + u.role">
+                    {{ u.username.charAt(0).toUpperCase() }}
+                  </span>
+                  <div>
+                    <div class="user-table-name">
+                      {{ u.username }}
+                      <span class="you-tag" *ngIf="u._id === auth.currentUser?._id">(you)</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="td-email">{{ u.email }}</td>
+              <td>
+                <ng-container *ngIf="editingUserId !== u._id; else roleEditor">
+                  <span class="role-badge" [class]="'rb-' + u.role">
+                    <i class="fi" [class.fi-rr-crown]="u.role === 'admin'" [class.fi-rr-pencil]="u.role === 'author'" [class.fi-rr-user]="u.role === 'user'"></i> {{ u.role }}
+                  </span>
+                </ng-container>
+                <ng-template #roleEditor>
+                  <div class="role-edit-row">
+                    <select class="form-control role-select" [(ngModel)]="editingUserRole">
+                      <option value="user">👤 User</option>
+                      <option value="author">✍ Author</option>
+                      <option value="admin">👑 Admin</option>
+                    </select>
+                    <button class="icon-btn save" (click)="saveUserRole(u._id)" title="Save">✓</button>
+                    <button class="icon-btn"      (click)="cancelEditRole()"    title="Cancel">✕</button>
+                  </div>
+                </ng-template>
+              </td>
+              <td>
+                <span class="status-pill" [class.published]="u.isActive">
+                  {{ u.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="td-date">{{ formatDate(u.createdAt) }}</td>
+              <td>
+                <div class="table-actions" *ngIf="u._id !== auth.currentUser?._id; else selfRow">
+                  <button class="icon-btn" (click)="startEditRole(u)" title="Change role" *ngIf="editingUserId !== u._id"><i class="fi fi-rr-user-gear"></i></button>
+                  <button class="icon-btn" (click)="toggleUserStatus(u._id)"
+                          [title]="u.isActive ? 'Deactivate' : 'Activate'">
+                    <i class="fi" [class.fi-rr-lock]="u.isActive" [class.fi-rr-unlock]="!u.isActive"></i>
+                  </button>
+                  <button class="icon-btn danger" (click)="deleteUser(u._id, u.username)" title="Delete user"><i class="fi fi-rr-trash"></i></button>
+                </div>
+                <ng-template #selfRow>
+                  <span class="text-muted" style="font-size:.75rem">—</span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ng-template #noUsers>
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fi fi-rr-users"></i></div>
+            <h3>No users found</h3>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="roles-info-card">
+        <h4 class="roles-info-title">📋 Role Permissions</h4>
+        <div class="roles-info-grid">
+          <div class="role-info-col">
+            <div class="ri-header rb-admin">👑 Admin</div>
+            <ul class="ri-list">
+              <li>✅ All platform permissions</li>
+              <li>✅ Manage ALL posts</li>
+              <li>✅ Manage categories</li>
+              <li>✅ Manage all users & roles</li>
+              <li>✅ Hide / delete any comment</li>
+            </ul>
+          </div>
+          <div class="role-info-col">
+            <div class="ri-header rb-author">✍ Author</div>
+            <ul class="ri-list">
+              <li>✅ Create & publish posts</li>
+              <li>✅ Edit / delete own posts</li>
+              <li>✅ Hide / delete comments on own posts</li>
+              <li>❌ Cannot manage categories</li>
+              <li>❌ Cannot manage users</li>
+            </ul>
+          </div>
+          <div class="role-info-col">
+            <div class="ri-header rb-user">👤 User</div>
+            <ul class="ri-list">
+              <li>✅ Read all published posts</li>
+              <li>✅ Like posts</li>
+              <li>✅ Add comments</li>
+              <li>✅ Delete own comments</li>
+              <li>❌ Cannot create posts</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ COMMENTS ═══════════════════════════════ -->
+    <section *ngIf="activeTab === 'comments'" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">
+            {{ auth.isAdmin ? 'All Comments' : 'Post Comments' }}
+          </h2>
+          <p class="admin-page-sub">
+            {{ auth.isAdmin
+              ? 'Manage all comments across the entire website.'
+              : 'Manage comments on your own posts.' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="cmt-stats-bar">
+        <div class="cmt-stat-chip" [class.active]="commentFilter === 'all'"
+             (click)="setCommentFilter('all')">
+          <span class="cmt-stat-icon"><i class="fi fi-rr-comment"></i></span>
+          <span class="cmt-stat-num">{{ commentStats.total }}</span>
+          <span class="cmt-stat-label">Total</span>
+        </div>
+        <div class="cmt-stat-chip visible" [class.active]="commentFilter === 'visible'"
+             (click)="setCommentFilter('visible')">
+          <span class="cmt-stat-icon"><i class="fi fi-rr-check"></i></span>
+          <span class="cmt-stat-num">{{ commentStats.visible }}</span>
+          <span class="cmt-stat-label">Visible</span>
+        </div>
+        <div class="cmt-stat-chip hidden-chip" [class.active]="commentFilter === 'hidden'"
+             (click)="setCommentFilter('hidden')">
+          <span class="cmt-stat-icon"><i class="fi fi-rr-ban"></i></span>
+          <span class="cmt-stat-num">{{ commentStats.hidden }}</span>
+          <span class="cmt-stat-label">Hidden</span>
+        </div>
+      </div>
+
+      <div class="cmt-search-bar">
+        <span class="cmt-search-icon"><i class="fi fi-rr-search"></i></span>
+        <input type="text" class="cmt-search-input"
+               placeholder="Search by comment text, author, or post title..."
+               [(ngModel)]="commentSearch"
+               (ngModelChange)="onCommentSearch()">
+        <button class="cmt-search-clear" *ngIf="commentSearch" (click)="commentSearch=''; applyCommentFilter()"><i class="fi fi-rr-cross-small"></i></button>
+      </div>
+
+      <div class="loading-center" *ngIf="commentsLoading"><div class="spinner"></div></div>
+
+      <div class="empty-state" *ngIf="!commentsLoading && filteredComments.length === 0">
+        <div class="empty-icon"><i class="fi fi-rr-comment"></i></div>
+        <h3>{{ commentSearch ? 'No comments match your search' : 'No comments yet' }}</h3>
+        <p>{{ auth.isAdmin ? 'Comments from all posts will appear here.' : 'Comments on your posts will appear here.' }}</p>
+      </div>
+
+      <div class="posts-table-wrap" *ngIf="!commentsLoading && filteredComments.length > 0">
+        <table class="posts-table">
+          <thead>
+            <tr>
+              <th>Author</th>
+              <th>Comment</th>
+              <th>Post</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of filteredComments" class="table-row"
+                [class.hidden-row]="!c.isApproved">
+              <td>
+                <div class="cmt-author-cell">
+                  <span class="cmt-author-av" [class]="'av-' + c.author.role">
+                    {{ c.author.username.charAt(0).toUpperCase() }}
+                  </span>
+                  <div>
+                    <div class="cmt-author-name">{{ c.author.username }}</div>
+                    <div class="cmt-author-role"><i class="fi" [class.fi-rr-crown]="c.author.role === 'admin'" [class.fi-rr-pencil]="c.author.role === 'author'" [class.fi-rr-user]="c.author.role === 'user'"></i> {{ c.author.role }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="cmt-text-cell">
+                <div class="cmt-text" [class.cmt-text-hidden]="!c.isApproved">
+                  {{ c.content | slice:0:100 }}{{ c.content.length > 100 ? '...' : '' }}
+                </div>
+              </td>
+              <td>
+                <a [routerLink]="['/blog', getPostSlug(c)]" target="_blank" class="cmt-post-link">
+                  {{ getPostTitle(c) | slice:0:35 }}{{ getPostTitle(c).length > 35 ? '...' : '' }}
+                </a>
+              </td>
+              <td>
+                <span class="status-pill" [class.published]="c.isApproved">
+                  {{ c.isApproved ? 'Visible' : 'Hidden' }}
+                </span>
+              </td>
+              <td class="td-date">{{ formatDate(c.createdAt) }}</td>
+              <td>
+                <div class="table-actions">
+                  <button class="icon-btn"
+                          (click)="toggleHideComment(c)"
+                          [title]="c.isApproved ? 'Hide comment' : 'Show comment'">
+                    <i class="fi" [class.fi-rr-ban]="c.isApproved" [class.fi-rr-check]="!c.isApproved"></i>
+                  </button>
+                  <button class="icon-btn danger" (click)="deleteComment(c._id)" title="Delete permanently"><i class="fi fi-rr-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cmt-results-count" *ngIf="!commentsLoading && filteredComments.length > 0">
+        Showing {{ filteredComments.length }} of {{ commentStats.total }} comment{{ commentStats.total !== 1 ? 's' : '' }}
+      </div>
+    </section>
+
+    <!-- ══════════ MESSAGES (Admin only) ═════════════════ -->
+    <!-- SETTINGS (Admin only) -->
+    <section *ngIf="activeTab === 'social' && auth.isAdmin" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">Settings</h2>
+          <p class="admin-page-sub">Manage footer social links and visibility.</p>
+        </div>
+      </div>
+
+      <div class="loading-center" *ngIf="socialLoading"><div class="spinner"></div></div>
+
+      <form *ngIf="!socialLoading" [formGroup]="socialForm" (ngSubmit)="saveSocialLinks()" class="social-manager-form">
+        <div formArrayName="socialLinks" class="social-links-list">
+          <div class="social-link-editor"
+               *ngFor="let group of socialLinksArray.controls; let i = index"
+               [formGroupName]="i">
+            
+            <div class="social-link-preview" [class.inactive]="group.get('isActive')?.value === false">
+              <i [class]="group.get('icon')?.value || 'fi fi-rr-link'"></i>
+            </div>
+
+            <div class="social-fields-grid">
+              <div class="form-group social-url-field">
+                <label class="form-label">{{ group.get('label')?.value }} URL</label>
+                <input type="text" class="form-control" formControlName="url" [placeholder]="'Enter your ' + group.get('label')?.value + ' profile link'">
+                <div class="form-hint">Use https://, mailto:, tel:, or an internal path.</div>
+              </div>
+            </div>
+
+            <div class="social-actions-right">
+              <label class="social-switch" [class.on]="group.get('isActive')?.value">
+                <input type="checkbox" formControlName="isActive">
+                <span class="social-switch-track"><span class="social-switch-thumb"></span></span>
+                <span class="social-switch-text">{{ group.get('isActive')?.value ? 'Visible' : 'Hidden' }}</span>
+              </label>
+              
+              <button type="button" class="btn-clear-link" (click)="clearSocialLink(i)" title="Clear link">
+                <i class="fi fi-rr-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="social-form-footer">
+          <div class="social-form-note">Inactive links or empty URLs stay saved but will not appear in the footer.</div>
+          <button type="submit" class="btn btn-primary" [disabled]="socialSaving || socialForm.invalid">
+            {{ socialSaving ? 'Saving...' : 'Save Settings' }}
+          </button>
+        </div>
+      </form>
+    </section>
+    <section *ngIf="activeTab === 'messages' && auth.isAdmin" class="fade-in">
+      <div class="admin-page-header">
+        <div>
+          <h2 class="admin-page-title">Messages</h2>
+          <p class="admin-page-sub">Contact form submissions from your readers.</p>
+        </div>
+        <div class="msg-header-actions">
+          <button class="btn btn-danger" *ngIf="msgStats.total > 0"
+                  (click)="deleteReadMessages()"
+                  style="font-size:.8rem;padding:8px 16px">
+            🗑 Delete Read
+          </button>
+        </div>
+      </div>
+
+      <div class="msg-stats-bar">
+        <div class="msg-stat-chip" [class.active]="msgFilter === 'all'" (click)="setMsgFilter('all')">
+          <span class="msg-stat-icon"><i class="fi fi-rr-envelope"></i></span>
+          <span class="msg-stat-num">{{ msgStats.total }}</span>
+          <span class="msg-stat-label">Total</span>
+        </div>
+        <div class="msg-stat-chip" [class.active]="msgFilter === 'unread'" (click)="setMsgFilter('unread')">
+          <span class="msg-stat-icon"><i class="fi fi-rr-inbox"></i></span>
+          <span class="msg-stat-num">{{ msgStats.unread }}</span>
+          <span class="msg-stat-label">Unread</span>
+        </div>
+        <div class="msg-stat-chip" [class.active]="msgFilter === 'starred'" (click)="setMsgFilter('starred')">
+          <span class="msg-stat-icon"><i class="fi fi-sr-star" style="color: #f1c40f"></i></span>
+          <span class="msg-stat-num">{{ msgStats.starred }}</span>
+          <span class="msg-stat-label">Starred</span>
+        </div>
+      </div>
+
+      <div class="loading-center" *ngIf="msgsLoading"><div class="spinner"></div></div>
+
+      <div class="messages-layout" [class.has-selected]="selectedMessage" *ngIf="!msgsLoading">
+        <div class="msg-list" [class.has-selected]="selectedMessage">
+          <div class="empty-state" *ngIf="filteredMessages.length === 0">
+            <div class="empty-icon"><i class="fi fi-rr-envelope-open"></i></div>
+            <h3>
+              {{ msgFilter === 'unread' ? 'No unread messages' : msgFilter === 'starred' ? 'No starred messages' : 'No messages yet' }}
+            </h3>
+            <p>Messages from the contact form will appear here.</p>
+          </div>
+
+          <div class="msg-item"
+               *ngFor="let msg of filteredMessages"
+               [class.unread]="!msg.isRead"
+               [class.selected]="selectedMessage?._id === msg._id"
+               (click)="openMessage(msg)">
+            <span class="msg-unread-dot" *ngIf="!msg.isRead"></span>
+            <div class="msg-sender-av">{{ msg.name.charAt(0).toUpperCase() }}</div>
+            <div class="msg-item-body">
+              <div class="msg-item-top">
+                <span class="msg-sender-name">{{ msg.name }}</span>
+                <span class="msg-item-date">{{ formatDate(msg.createdAt) }}</span>
+              </div>
+              <div class="msg-item-topic">
+                <span class="msg-topic-dot" [style.background]="getTopicColor(msg.topic)"></span>
+                {{ msg.topic }}
+              </div>
+              <div class="msg-item-preview">{{ msg.message | slice:0:80 }}...</div>
+            </div>
+            <div class="msg-item-actions">
+              <button class="msg-icon-btn" [class.starred]="msg.isStarred"
+                      (click)="toggleStar(msg, $event)"
+                      [title]="msg.isStarred ? 'Unstar' : 'Star'">
+                <i class="fi" [class.fi-sr-star]="msg.isStarred" [class.fi-rr-star]="!msg.isStarred"></i>
+              </button>
+              <button class="msg-icon-btn"
+                      (click)="toggleRead(msg, $event)"
+                      [title]="msg.isRead ? 'Mark unread' : 'Mark read'">
+                <i class="fi" [class.fi-rr-envelope-open]="msg.isRead" [class.fi-rr-envelope]="!msg.isRead"></i>
+              </button>
+              <button class="msg-icon-btn danger" (click)="deleteMessage(msg._id, $event)" title="Delete"><i class="fi fi-rr-trash"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg-detail" *ngIf="selectedMessage">
+          <div class="msg-detail-header">
+            <div class="msg-detail-sender">
+              <div class="msg-detail-av">{{ selectedMessage.name.charAt(0).toUpperCase() }}</div>
+              <div>
+                <div class="msg-detail-name">{{ selectedMessage.name }}</div>
+                <a [href]="'mailto:' + selectedMessage.email" class="msg-detail-email">
+                  {{ selectedMessage.email }}
+                </a>
+              </div>
+            </div>
+            <button class="msg-detail-close" (click)="closeMessage()"><i class="fi fi-rr-cross-small"></i></button>
+          </div>
+
+          <div class="msg-detail-meta">
+            <span class="msg-detail-topic"
+                  [style.background]="getTopicColor(selectedMessage.topic) + '20'"
+                  [style.color]="getTopicColor(selectedMessage.topic)"
+                  [style.border-color]="getTopicColor(selectedMessage.topic) + '40'">
+              {{ selectedMessage.topic }}
+            </span>
+            <span class="msg-detail-date">{{ formatDateTime(selectedMessage.createdAt) }}</span>
+          </div>
+
+          <div class="msg-detail-body"><p>{{ selectedMessage.message }}</p></div>
+
+          <div class="replied-badge" *ngIf="selectedMessage.repliedAt">
+            <i class="fi fi-rr-check" style="color:var(--accent-light); margin-right:6px;"></i> Replied on {{ formatDate(selectedMessage.repliedAt) }}
+          </div>
+
+          <div class="msg-detail-actions">
+            <button class="btn btn-primary reply-btn"
+                    (click)="openReplyModal()"
+                    [disabled]="showReplyModal"><i class="fi fi-rr-reply" style="margin-right:6px;"></i> Reply via Email</button>
+            <button class="btn btn-ghost" (click)="toggleStar(selectedMessage, $event)">
+              <i class="fi" [class.fi-sr-star]="selectedMessage.isStarred" [class.fi-rr-star]="!selectedMessage.isStarred"></i> {{ selectedMessage.isStarred ? 'Unstar' : 'Star' }}
+            </button>
+            <button class="btn btn-danger" (click)="deleteMessage(selectedMessage._id, $event)"><i class="fi fi-rr-trash" style="margin-right:6px;"></i> Delete</button>
+          </div>
+
+          <div class="reply-compose" *ngIf="showReplyModal">
+            <div class="reply-compose-header">
+              <div class="reply-compose-title">
+                <span><i class="fi fi-rr-reply"></i></span>
+                <span>Reply to <strong>{{ selectedMessage.name }}</strong></span>
+              </div>
+              <button class="reply-compose-close" (click)="closeReplyModal()"><i class="fi fi-rr-cross-small"></i></button>
+            </div>
+            <div class="reply-sent" *ngIf="replySuccess">
+              <div class="reply-sent-icon"><i class="fi fi-rr-check"></i></div>
+              <div class="reply-sent-text">{{ replySuccess }}</div>
+            </div>
+            <div class="reply-compose-body" *ngIf="!replySuccess">
+              <div class="reply-error" *ngIf="replyError"><span><i class="fi fi-rr-warning"></i></span> {{ replyError }}</div>
+              <div class="reply-field">
+                <label class="reply-field-label">To</label>
+                <div class="reply-field-value">
+                  <span class="reply-to-name">{{ selectedMessage.name }}</span>
+                  <span class="reply-to-email">&lt;{{ selectedMessage.email }}&gt;</span>
+                </div>
+              </div>
+              <div class="reply-field">
+                <label class="reply-field-label">Subject</label>
+                <input type="text" class="form-control reply-input"
+                       [(ngModel)]="replySubject"
+                       placeholder="Re: Your message to ThinkFlow">
+              </div>
+              <div class="reply-field">
+                <label class="reply-field-label">Message</label>
+                <textarea class="form-control reply-textarea"
+                          [(ngModel)]="replyBody"
+                          placeholder="Write your reply here..."
+                          rows="6"></textarea>
+              </div>
+              <div class="reply-quoted">
+                <div class="reply-quoted-label"><i class="fi fi-rr-clip" style="margin-right:6px;"></i> Original message will be included below your reply</div>
+                <div class="reply-quoted-preview">
+                  <strong>{{ selectedMessage.topic }}:</strong>
+                  {{ selectedMessage.message | slice:0:100 }}{{ selectedMessage.message.length > 100 ? '...' : '' }}
+                </div>
+              </div>
+              <div class="reply-compose-footer">
+                <button class="btn btn-ghost" (click)="closeReplyModal()" [disabled]="replySending">Cancel</button>
+                <button class="btn btn-primary send-reply-btn"
+                        (click)="sendReply()"
+                        [disabled]="replySending || !replyBody.trim()">
+                  <span class="reply-spinner" *ngIf="replySending"></span>
+                  <i class="fi fi-rr-paper-plane" style="margin-right:6px;"></i> {{ replySending ? 'Sending...' : 'Send Reply' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+
+
+

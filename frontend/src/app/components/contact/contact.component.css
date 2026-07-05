@@ -1,0 +1,324 @@
+/* src/app/components/contact/contact.component.css */
+
+.contact-hero {
+  padding: var(--space-3xl) 0 var(--space-xl);
+  position: relative;
+}
+
+.contact-hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(212,168,83,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.contact-title {
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.15;
+  margin: 16px 0 20px;
+}
+
+.accent-italic { font-style: italic; color: var(--accent); font-weight: 400; }
+
+.contact-subtitle {
+  max-width: 500px;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* Layout */
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: var(--space-2xl);
+  padding-bottom: var(--space-3xl);
+  align-items: start;
+}
+
+/* Info Column */
+.contact-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  position: sticky;
+  top: 104px;
+}
+
+.info-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+}
+
+.info-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+}
+
+.info-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+.info-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.info-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* FAQ */
+.faq-heading {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.faq-item.open { border-color: var(--border-hover); }
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  gap: 12px;
+  transition: background 0.2s;
+}
+
+.faq-question:hover { background: var(--bg-hover); }
+
+.faq-arrow {
+  font-size: 0.6rem;
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.faq-item.open .faq-answer {
+  max-height: 200px;
+}
+
+.faq-answer p {
+  padding: 0 16px 16px;
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* Form Column */
+.contact-form-col { }
+
+.contact-form-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+}
+
+.form-card-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.btn-send {
+  height: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  justify-content: center;
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* Success Card */
+.success-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(39,174,96,0.3);
+  border-radius: var(--radius-lg);
+  padding: 64px 36px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(39,174,96,0.12);
+  border: 2px solid rgba(39,174,96,0.4);
+  color: #2ecc71;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.success-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 320px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .contact-layout { grid-template-columns: 1fr; }
+  .contact-info-col { position: static; }
+  .form-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .contact-form-card { padding: 24px 20px; }
+}
+
+/* Sending spinner inside button */
+.sending-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(15,15,15,0.3);
+  border-top-color: var(--bg-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Pre-fill banner for logged-in users */
+.contact-prefill-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: rgba(39,174,96,0.08);
+  border: 1px solid rgba(39,174,96,0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: #2ecc71;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.prefill-icon { font-size: 0.9rem; flex-shrink: 0; }
+
+/* Read-only pre-filled input style */
+.form-control.prefilled {
+  background: var(--bg-primary);
+  border-color: rgba(39,174,96,0.3);
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+* ── Become-an-Author banner ──────────────────────────────────────── */
+.become-author-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 22px;
+  background: linear-gradient(135deg,
+    rgba(74, 32, 114, 0.08) 0%,
+    rgba(74, 32, 114, 0.04) 100%);
+  border: 1.5px solid rgba(74, 32, 114, 0.35);
+  border-left: 5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+}
+ 
+.bab-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+ 
+.bab-body { flex: 1; }
+ 
+.bab-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+ 
+.bab-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}

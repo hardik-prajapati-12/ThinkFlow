@@ -1,0 +1,141 @@
+<!-- src/app/components/navbar/navbar.component.html -->
+<nav class="navbar" [class.scrolled]="isScrolled">
+  <div class="container nav-inner">
+
+    <!-- ── Brand ── -->
+    <a routerLink="/" class="nav-brand">
+      <svg class="brand-logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" fill="rgba(124, 58, 237, 0.15)" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="16" y1="8" x2="2" y2="22" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="17.5" y1="15" x2="9" y2="15" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">ThinkFlow</span>
+    </a>
+
+    <!-- ── Desktop Nav ── -->
+    <ul class="nav-links" [class.open]="menuOpen">
+      <!-- Mobile-Only Drawer Header -->
+      <li class="drawer-header-row">
+        <a routerLink="/" class="nav-brand drawer-logo" (click)="menuOpen=false">
+          <svg class="brand-logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" fill="rgba(124, 58, 237, 0.15)" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="16" y1="8" x2="2" y2="22" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="17.5" y1="15" x2="9" y2="15" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+          <span class="brand-name">ThinkFlow</span>
+        </a>
+        <button class="drawer-close-btn" (click)="menuOpen=false" aria-label="Close menu">✕</button>
+      </li>
+      <li>
+        <a routerLink="/" routerLinkActive="active"
+           [routerLinkActiveOptions]="{exact:true}" class="nav-link"
+           (click)="menuOpen=false">Home</a>
+      </li>
+      <li>
+        <a routerLink="/about" routerLinkActive="active" class="nav-link"
+           (click)="menuOpen=false">About</a>
+      </li>
+      <li>
+        <a routerLink="/contact" routerLinkActive="active" class="nav-link"
+           (click)="menuOpen=false">Contact</a>
+      </li>
+      <li *ngIf="auth.isLoggedIn && auth.isAuthorOrAdmin">
+        <a routerLink="/admin" routerLinkActive="active" class="nav-link dashboard-link"
+           (click)="menuOpen=false">
+          <span class="dash-icon">⚙</span> Dashboard
+        </a>
+      </li>
+
+      <!-- Mobile-Only Action Section (Guest) -->
+      <li class="mobile-only-item" *ngIf="!auth.isLoggedIn">
+        <div class="mobile-nav-actions">
+          <a routerLink="/login" class="btn btn-nav-outline w-100" (click)="menuOpen=false">Login</a>
+          <a routerLink="/login" [queryParams]="{tab: 'register'}" class="btn btn-nav-primary w-100" (click)="menuOpen=false">Sign Up</a>
+        </div>
+      </li>
+
+      <!-- Mobile-Only Action Section (Logged-in User) -->
+      <li class="mobile-only-item" *ngIf="auth.isLoggedIn">
+        <div class="mobile-user-section">
+          <div class="mobile-user-info">
+            <span class="mobile-user-name">{{ auth.currentUser?.username }}</span>
+            <span class="mobile-user-role">{{ auth.currentUser?.role }}</span>
+          </div>
+          <div class="mobile-user-actions">
+            <a routerLink="/profile" class="mobile-user-btn" (click)="menuOpen=false">
+              👤 My Profile
+            </a>
+            <button class="mobile-user-btn danger" (click)="logout(); menuOpen=false">
+              🚪 Sign Out
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <!-- ── Right Side ── -->
+    <div class="nav-right">
+
+      <!-- Guest: Login + Sign Up -->
+      <ng-container *ngIf="!auth.isLoggedIn">
+        <a routerLink="/login" class="btn btn-nav-outline" (click)="menuOpen=false">Login</a>
+        <a routerLink="/login" [queryParams]="{tab: 'register'}" class="btn btn-nav-primary" (click)="menuOpen=false">Sign Up</a>
+      </ng-container>
+
+      <!-- Logged in: user dropdown -->
+      <ng-container *ngIf="auth.isLoggedIn">
+        <div class="nav-user user-menu" (click)="toggleDropdown($event)" [class.open]="dropdownOpen">
+
+          <!-- Avatar: real photo when uploaded -->
+          <ng-container *ngIf="auth.currentUser?.avatar; else navInitials">
+            <img [src]="auth.currentUser?.avatar?.startsWith('http')
+                   ? auth.currentUser?.avatar
+                   : 'http://localhost:5000' + auth.currentUser?.avatar"
+                 class="nav-avatar-img"
+                 [alt]="auth.currentUser?.username"
+                 onerror="this.style.display='none'">
+          </ng-container>
+          <ng-template #navInitials>
+            <span class="nav-avatar">
+              {{ auth.currentUser?.username?.charAt(0)?.toUpperCase() }}
+            </span>
+          </ng-template>
+
+          <span class="nav-username">{{ auth.currentUser?.username }}</span>
+          <span class="nav-caret">▾</span>
+
+          <!-- ✅ Removed (click)="$event.stopPropagation()" — it was blocking closeDropdown -->
+          <div class="nav-dropdown" *ngIf="dropdownOpen">
+            <div class="dropdown-header">
+              <div class="dh-name">{{ auth.currentUser?.username }}</div>
+              <div class="dh-role">{{ auth.currentUser?.role }}</div>
+            </div>
+            <a routerLink="/profile" class="dropdown-item" (click)="closeDropdown()">
+              👤 My Profile
+            </a>
+            <a routerLink="/admin" class="dropdown-item"
+               *ngIf="auth.isAuthorOrAdmin" (click)="closeDropdown()">
+              ⚙ Dashboard
+            </a>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" (click)="logout()">
+              🚪 Sign Out
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Hamburger -->
+      <button class="hamburger" (click)="toggleMenu()" [class.open]="menuOpen"
+              aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-backdrop" *ngIf="menuOpen" (click)="menuOpen=false"></div>
+</nav>
+
+<!-- Spacer so content doesn't hide behind fixed navbar -->
+<div class="nav-spacer"></div>

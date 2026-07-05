@@ -1,0 +1,57 @@
+<!-- src/app/components/category/category.component.html -->
+<section class="cat-hero" *ngIf="category">
+  <div class="container">
+    <a routerLink="/" class="back-chip">← All Articles</a>
+    <div class="cat-icon-hero" [style.background]="category.color + '18'"
+         [style.border-color]="category.color + '40'">{{ category.icon }}</div>
+    <h1 class="cat-title">{{ category.name }}</h1>
+    <p class="cat-desc" *ngIf="category.description">{{ category.description }}</p>
+    <span class="cat-count">{{ total }} article{{ total !== 1 ? 's' : '' }}</span>
+  </div>
+</section>
+
+<div class="container cat-content" *ngIf="!loading && posts.length > 0">
+  <div class="cat-grid">
+    <article class="post-card fade-in" *ngFor="let post of posts; let i = index"
+             [style.animation-delay]="(i * 0.07) + 's'">
+      <a [routerLink]="['/blog', post.slug]" class="post-img-link">
+        <div class="post-img-wrap">
+          <img [src]="getImageUrl(post.coverImage || '')" [alt]="post.title" class="post-img"
+               onerror="this.src='https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80'">
+        </div>
+      </a>
+      <div class="post-card-body">
+        <div class="post-card-top">
+          <span class="read-time">{{ post.readTime }} min read</span>
+          <span class="post-date-sm">{{ formatDate(post.createdAt) }}</span>
+        </div>
+        <a [routerLink]="['/blog', post.slug]"><h3 class="post-card-title">{{ post.title }}</h3></a>
+        <p class="post-card-excerpt">{{ post.excerpt | slice:0:120 }}...</p>
+      </div>
+      <div class="post-card-footer">
+        <div class="post-meta">
+          <span class="meta-avatar">{{ post.author.username.charAt(0).toUpperCase() }}</span>
+          <span class="meta-author">{{ post.author.username }}</span>
+        </div>
+        <div class="post-stats">
+          <span class="stat">👁 {{ post.views }}</span>
+          <span class="stat">❤ {{ post.likes.length }}</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="loadPosts(currentPage - 1)">← Prev</button>
+    <button class="page-btn" *ngFor="let p of getPages()" [class.active]="p === currentPage" (click)="loadPosts(p)">{{ p }}</button>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="loadPosts(currentPage + 1)">Next →</button>
+  </div>
+</div>
+
+<div class="loading-center" *ngIf="loading"><div class="spinner"></div></div>
+
+<div class="empty-state" *ngIf="!loading && posts.length === 0">
+  <div class="empty-icon">📭</div>
+  <h3>No posts in this category yet.</h3>
+  <a routerLink="/" class="btn btn-outline">Browse All Articles</a>
+</div>

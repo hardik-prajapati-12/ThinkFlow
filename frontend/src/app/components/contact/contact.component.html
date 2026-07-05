@@ -1,0 +1,151 @@
+<!-- src/app/components/contact/contact.component.html -->
+
+<!-- Hero -->
+<section class="contact-hero">
+  <div class="container">
+    <div class="section-label">Get in Touch</div>
+    <h1 class="contact-title fade-in">Let's start a<br><em class="accent-italic">conversation</em></h1>
+    <p class="contact-subtitle fade-in fade-in-delay-1">
+      Have a question, a collaboration proposal, or just want to share feedback? Drop us a message and we'll get back to you within 24 hours.
+    </p>
+  </div>
+</section>
+
+<div class="container contact-layout">
+
+  <!-- Left: Info + FAQ -->
+  <div class="contact-info-col fade-in">
+
+    <!-- Contact Cards -->
+    <div class="info-cards">
+      <div class="info-card">
+        <span class="info-icon">📧</span>
+        <div>
+          <div class="info-label">Email us</div>
+          <div class="info-value">thinkflow&#64;gmail.com</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">⏱</span>
+        <div>
+          <div class="info-label">Response time</div>
+          <div class="info-value">Within 24 hours</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">🌍</span>
+        <div>
+          <div class="info-label">Based in</div>
+          <div class="info-value">Remote — Worldwide</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ Accordion -->
+    <div class="faq-section">
+      <h3 class="faq-heading">Frequently Asked Questions</h3>
+      <div class="faq-list">
+        <div class="faq-item" *ngFor="let faq of faqs; let i = index"
+             [class.open]="openFaqIndex === i">
+          <button class="faq-question" (click)="toggleFaq(i)">
+            <span>{{ faq.q }}</span>
+            <span class="faq-arrow">{{ openFaqIndex === i ? '▲' : '▼' }}</span>
+          </button>
+          <div class="faq-answer">
+            <p>{{ faq.a }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Contact Form -->
+  <div class="contact-form-col fade-in fade-in-delay-1">
+
+    <!-- ── Become-an-Author banner ── -->
+    <!-- Shown only when user arrives via "Start Writing" CTA as a subscriber -->
+    <div class="become-author-banner" *ngIf="showAuthorBanner">
+      <div class="bab-icon">✍️</div>
+      <div class="bab-body">
+        <p class="bab-title">Want to become an author?</p>
+        <p class="bab-desc">
+          Your account doesn't have author access yet. Send us a message using the form below
+          and our team will review your application. We'd love to have you on board!
+        </p>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div class="success-card" *ngIf="submitted">
+      <div class="success-icon">✓</div>
+      <h3>Message sent!</h3>
+      <p>Thank you for reaching out. We'll reply to your email within 24 hours.</p>
+      <button class="btn btn-outline" (click)="reset()">Send another message</button>
+    </div>
+
+    <!-- Form -->
+    <div class="contact-form-card" *ngIf="!submitted">
+      <h3 class="form-card-title">
+        <!-- Title adapts when the author banner is visible -->
+        {{ showAuthorBanner ? 'Apply to Become an Author' : 'Send a Message' }}
+      </h3>
+
+      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+        <!-- Logged-in user banner -->
+        <div class="contact-prefill-banner" *ngIf="isLoggedIn">
+          <span class="prefill-icon">✓</span>
+          <span>Signed in — your name and email have been filled automatically.</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Your Name *</label>
+            <input type="text" class="form-control"
+                   formControlName="name"
+                   placeholder="John Doe"
+                   [class.prefilled]="isLoggedIn"
+                   [attr.readonly]="isLoggedIn ? true : null">
+            <div class="form-error" *ngIf="hasError('name')">Please enter your name.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" class="form-control"
+                   formControlName="email"
+                   placeholder="you@example.com"
+                   [class.prefilled]="isLoggedIn"
+                   [attr.readonly]="isLoggedIn ? true : null">
+            <div class="form-error" *ngIf="hasError('email')">Please enter a valid email.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Topic *</label>
+          <select class="form-control" formControlName="topic">
+            <option value="">— Select a topic —</option>
+            <option *ngFor="let t of topics" [value]="t">{{ t }}</option>
+          </select>
+          <div class="form-error" *ngIf="hasError('topic')">Please select a topic.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Message *</label>
+          <textarea class="form-control" formControlName="message" rows="6"
+                    [placeholder]="showAuthorBanner
+                      ? 'Tell us about your writing experience, topics you\'d like to cover, and why you\'d like to join our team...'
+                      : 'Tell us what\'s on your mind...'">
+          </textarea>
+          <div class="form-error" *ngIf="hasError('message')">Message must be at least 20 characters.</div>
+        </div>
+
+        <div class="alert alert-error" *ngIf="errorMsg" style="margin-bottom:12px">
+          {{ errorMsg }}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-send" [disabled]="loading">
+          <span *ngIf="loading" class="sending-spinner"></span>
+          {{ loading ? 'Sending...' : (showAuthorBanner ? 'Submit Application →' : 'Send Message →') }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

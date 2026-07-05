@@ -1,0 +1,124 @@
+<!-- src/app/components/login/login.component.html -->
+<div class="auth-page">
+  <div class="auth-bg"></div>
+
+  <div class="auth-container fade-in">
+
+    <!-- Brand -->
+    <a routerLink="/" class="auth-brand">
+      <svg class="brand-logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" fill="rgba(124, 58, 237, 0.15)" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="16" y1="8" x2="2" y2="22" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="17.5" y1="15" x2="9" y2="15" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      ThinkFlow
+    </a>
+
+    <!-- Session expired banner -->
+    <div class="session-banner" *ngIf="sessionMsg">
+      <span class="session-icon">🔒</span>
+      <span>{{ sessionMsg }}</span>
+    </div>
+
+    <!-- Card -->
+    <div class="auth-card">
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab" [class.active]="activeTab === 'login'"
+                (click)="switchTab('login')">Sign In</button>
+        <button class="auth-tab" [class.active]="activeTab === 'register'"
+                (click)="switchTab('register')">Create Account</button>
+      </div>
+
+      <!-- Alerts -->
+      <div class="alert alert-error"   *ngIf="errorMsg">{{ errorMsg }}</div>
+      <div class="alert alert-success" *ngIf="successMsg">{{ successMsg }}</div>
+
+      <!-- ─── LOGIN ───────────────────────────────────────── -->
+      <form *ngIf="activeTab === 'login'" [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Sign in to continue reading great content.</p>
+
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input type="email" class="form-control" formControlName="email" placeholder="you@example.com" autocomplete="email">
+          <div class="form-error" *ngIf="hasError(loginForm, 'email')">Please enter a valid email.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-with-icon">
+            <input [type]="showPassword ? 'text' : 'password'"
+                   class="form-control" formControlName="password" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
+              {{ showPassword ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <div class="form-error" *ngIf="hasError(loginForm, 'password')">Min. 6 characters required.</div>
+        </div>
+
+        <!-- Forgot password link -->
+        <div class="forgot-link-row">
+          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full btn-auth" [disabled]="loading">
+          {{ loading ? 'Signing in...' : 'Sign In →' }}
+        </button>
+        <p class="auth-switch">
+          Don't have an account?
+          <button type="button" (click)="switchTab('register')">Create one</button>
+        </p>
+      </form>
+
+      <!-- ─── REGISTER ─────────────────────────────────────── -->
+      <form *ngIf="activeTab === 'register'" [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
+        <h2 class="auth-title">Join ThinkFlow</h2>
+        <p class="auth-subtitle">Create your free account and start reading.</p>
+
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" formControlName="username" placeholder="yourname">
+          <div class="form-error" *ngIf="hasError(registerForm, 'username')">Min. 3 characters required.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input type="email" class="form-control" formControlName="email" placeholder="you@example.com" autocomplete="email">
+          <div class="form-error" *ngIf="hasFieldError(registerForm, 'email', 'required')">Email is required.</div>
+          <div class="form-error" *ngIf="hasFieldError(registerForm, 'email', 'email') || hasFieldError(registerForm, 'email', 'pattern')">
+            Enter a valid email format like name@domain.com (must include @ and a domain).
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-with-icon">
+            <input [type]="showPassword ? 'text' : 'password'"
+                   class="form-control" formControlName="password" placeholder="Min. 6 characters">
+            <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
+              {{ showPassword ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <div class="form-error" *ngIf="hasFieldError(registerForm, 'password', 'required')">Password is required.</div>
+          <div class="form-error" *ngIf="hasFieldError(registerForm, 'password', 'minlength')">Password must be at least 6 characters.</div>
+          <div class="form-error" *ngIf="hasFieldError(registerForm, 'password', 'pattern')">
+            Password must start with a capital letter, include alphanumeric characters, and contain at least one special character.
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full btn-auth" [disabled]="loading">
+          {{ loading ? 'Creating account...' : 'Create Account →' }}
+        </button>
+
+        <p class="auth-switch">
+          Already have an account?
+          <button type="button" (click)="switchTab('login')">Sign in</button>
+        </p>
+      </form>
+    </div>
+
+    <p class="auth-footer-note">By continuing, you agree to our Terms of Service.</p>
+  </div>
+</div>

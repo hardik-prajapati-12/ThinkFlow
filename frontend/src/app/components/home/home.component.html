@@ -1,0 +1,251 @@
+<!-- src/app/components/home/home.component.html -->
+
+<!-- ═══════════════ HERO SECTION ═══════════════ -->
+<section class="hero">
+  <div class="hero-bg-pattern"></div>
+  <div class="container hero-inner">
+
+    <!-- Left: Text Content -->
+    <div class="hero-left fade-in">
+      <h1 class="hero-title">
+        Where Deep Thoughts<br>
+        <span class="hero-highlight">Meet Creative Flow</span>
+      </h1>
+      <p class="hero-subtitle">
+        Discover insightful articles on technology, design, lifestyle, and ideas
+        that matter. Join a community of curious minds and passionate creators.
+      </p>
+      <div class="hero-actions">
+        <a href="#posts" class="btn btn-primary btn-lg">
+          <i class="fi fi-rr-book-open-reader"></i> Read Articles
+        </a>
+        <a routerLink="/admin" [queryParams]="{tab: 'create'}" class="btn btn-outline btn-lg"
+           *ngIf="auth.isLoggedIn && auth.isAuthorOrAdmin">
+          <i class="fi fi-rr-pencil"></i> Start Writing
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="stat-icon-wrap"><span>📝</span></div>
+          <div class="stat-info">
+            <span class="stat-number">{{ total }}+</span>
+            <span class="stat-label">Published</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap"><span>🗂</span></div>
+          <div class="stat-info">
+            <span class="stat-number">{{ categories.length }}+</span>
+            <span class="stat-label">Categories</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap"><span>✨</span></div>
+          <div class="stat-info">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Free Access</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Featured Article Showcase Cover -->
+    <div class="hero-right fade-in fade-in-delay-2" *ngIf="featuredPosts.length > 0">
+      <a [routerLink]="['/blog', featuredPosts[0].slug]" class="hero-cover-card" *ngIf="featuredPosts[0]">
+        <!-- Image wrapper with zoom effect -->
+        <div class="hcc-image-wrapper">
+          <img *ngIf="featuredPosts[0].coverImage; else fallbackCover"
+               [src]="featuredPosts[0].coverImage.startsWith('http') ? featuredPosts[0].coverImage : 'http://localhost:5000' + featuredPosts[0].coverImage"
+               class="hcc-image"
+               [alt]="featuredPosts[0].title">
+          <ng-template #fallbackCover>
+            <div class="hcc-image-fallback">
+              <i class="fi fi-rr-document"></i>
+            </div>
+          </ng-template>
+          <span class="hcc-category" *ngIf="featuredPosts[0].category">{{ featuredPosts[0].category.name }}</span>
+        </div>
+
+        <div class="hcc-body">
+          <h3 class="hcc-title">{{ featuredPosts[0].title | slice:0:70 }}{{ featuredPosts[0].title.length > 70 ? '...' : '' }}</h3>
+          <p class="hcc-excerpt">{{ featuredPosts[0].excerpt || 'Explore this curated featured article on ThinkFlow.' }}</p>
+
+          <div class="hcc-footer">
+            <div class="hcc-author">
+              <img *ngIf="featuredPosts[0].author?.avatar; else authorInitials"
+                   [src]="featuredPosts[0].author.avatar?.startsWith('http') ? featuredPosts[0].author.avatar : 'http://localhost:5000' + featuredPosts[0].author.avatar"
+                   class="hcc-avatar"
+                   [alt]="featuredPosts[0].author.username">
+              <ng-template #authorInitials>
+                <span class="hcc-avatar-initials">{{ featuredPosts[0].author.username.charAt(0).toUpperCase() }}</span>
+              </ng-template>
+              <span class="hcc-author-name">{{ featuredPosts[0].author.username }}</span>
+            </div>
+            <div class="hcc-meta">
+              <span>⏱ {{ featuredPosts[0].readTime }} min read</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-dot"></div>
+  </div>
+</section>
+
+<div class="divider container"></div>
+
+<!-- ═══════════════ CATEGORIES ═══════════════ -->
+<section class="categories-section" *ngIf="categories.length > 0">
+  <div class="container">
+    <div class="section-label">🗂 Browse</div>
+    <div class="categories-scroll">
+      <button class="cat-chip" [class.active]="selectedCategory === ''"
+              (click)="filterByCategory('')">All Posts</button>
+      <button class="cat-chip" *ngFor="let cat of categories"
+              [class.active]="selectedCategory === cat._id"
+              (click)="filterByCategory(cat._id)">
+        {{ cat.icon }} {{ cat.name }}
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ POSTS GRID ═══════════════ -->
+<section class="posts-section" id="posts">
+  <div class="container">
+
+    <!-- Search Bar -->
+    <div class="search-bar-wrap">
+      <div class="search-bar" [class.search-active]="searchQuery.length > 0">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search by title, #tag, author name, or category..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+          autocomplete="off">
+        <span class="search-spinner" *ngIf="loadingPosts && searchQuery"></span>
+        <button class="search-clear" *ngIf="searchQuery" (click)="clearSearch()" title="Clear">✕</button>
+      </div>
+
+      <div class="search-result-row" *ngIf="searchQuery && !loadingPosts">
+        <span class="search-match-badge" [ngSwitch]="searchMatchType">
+          <ng-container *ngSwitchCase="'author'">   👤 Posts by <strong>"{{ searchQuery }}"</strong></ng-container>
+          <ng-container *ngSwitchCase="'category'"> 🗂 Category <strong>"{{ searchQuery }}"</strong></ng-container>
+          <ng-container *ngSwitchCase="'tag'">      🏷 Tag <strong>#{{ searchQuery }}</strong></ng-container>
+          <ng-container *ngSwitchCase="'title'">    📄 Results for <strong>"{{ searchQuery }}"</strong></ng-container>
+          <ng-container *ngSwitchDefault>           🔍 <strong>"{{ searchQuery }}"</strong></ng-container>
+        </span>
+        <span class="results-count">{{ total }} article{{ total !== 1 ? 's' : '' }} found</span>
+        <button class="search-clear-link" (click)="clearSearch()">Clear ✕</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-center" *ngIf="loadingPosts">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loadingPosts && posts.length === 0">
+      <div class="empty-icon">📭</div>
+      <h3>No articles found</h3>
+      <p *ngIf="searchQuery">
+        No results for <strong>"{{ searchQuery }}"</strong>.<br>
+        Try a different title, tag, author name, or category.
+      </p>
+      <p *ngIf="!searchQuery">No articles published yet.</p>
+      <button class="btn btn-outline" (click)="clearSearch()">Clear Filters</button>
+    </div>
+
+    <!-- Posts Grid -->
+    <div class="posts-grid" *ngIf="!loadingPosts && posts.length > 0">
+      <article class="post-card fade-in"
+               *ngFor="let post of posts; let i = index"
+               [style.animation-delay]="(i * 0.08) + 's'">
+
+        <!-- Cover Image -->
+        <a [routerLink]="['/blog', post.slug]" class="post-img-link">
+          <div class="post-img-wrap">
+            <img [src]="getImageUrl(post.coverImage || '')" [alt]="post.title"
+                 class="post-img"
+                 onerror="this.src='https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80'">
+            <div class="post-img-overlay">
+              <span class="read-btn">Read Article →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card Body -->
+        <div class="post-card-body">
+          <div class="post-card-top">
+            <span class="badge" *ngIf="post.category">
+              {{ post.category.icon }} {{ post.category.name }}
+            </span>
+            <span class="read-time">{{ post.readTime }} min read</span>
+          </div>
+
+          <a [routerLink]="['/blog', post.slug]">
+            <h3 class="post-card-title">{{ post.title }}</h3>
+          </a>
+
+          <p class="post-card-excerpt">{{ post.excerpt | slice:0:120 }}...</p>
+
+          <div class="post-tags" *ngIf="post.tags && post.tags.length > 0">
+            <span class="tag"
+                  *ngFor="let tag of post.tags.slice(0, 3)"
+                  [class.tag-highlight]="searchMatchType === 'tag' && tag.toLowerCase() === searchQuery.toLowerCase()"
+                  (click)="searchQuery = tag; onSearch()"
+                  title="Search #{{ tag }}">#{{ tag }}</span>
+          </div>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="post-card-footer">
+          <div class="post-meta">
+            <img *ngIf="post.author.avatar"
+                 [src]="post.author.avatar.startsWith('http') ? post.author.avatar : 'http://localhost:5000' + post.author.avatar"
+                 class="meta-avatar meta-avatar-img"
+                 [alt]="post.author.username"
+                 [class.author-highlight]="searchMatchType === 'author'"
+                 onerror="this.style.display='none'">
+            <span class="meta-avatar"
+                  *ngIf="!post.author.avatar"
+                  [class.author-highlight]="searchMatchType === 'author'">
+              {{ post.author.username.charAt(0).toUpperCase() }}
+            </span>
+            <div class="meta-info">
+              <span class="meta-author"
+                    [class.author-highlight-text]="searchMatchType === 'author'"
+                    (click)="searchQuery = post.author.username; onSearch()"
+                    style="cursor:pointer">
+                {{ post.author.username }}
+              </span>
+              <span class="meta-date">{{ formatDate(post.createdAt) }}</span>
+            </div>
+          </div>
+          <div class="post-stats">
+            <span class="stat">👁 {{ post.views }}</span>
+            <span class="stat">❤ {{ post.likes.length }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1 && !loadingPosts">
+      <button class="page-btn" [disabled]="currentPage === 1"
+              (click)="loadPosts(currentPage - 1)">← Prev</button>
+      <button class="page-btn" *ngFor="let page of getPages()"
+              [class.active]="page === currentPage"
+              (click)="loadPosts(page)">{{ page }}</button>
+      <button class="page-btn" [disabled]="currentPage === totalPages"
+              (click)="loadPosts(currentPage + 1)">Next →</button>
+    </div>
+
+  </div>
+</section>

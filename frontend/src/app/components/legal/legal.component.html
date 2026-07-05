@@ -1,0 +1,253 @@
+<!-- src/app/components/legal/legal.component.html -->
+
+<!-- Page Hero -->
+<section class="legal-hero">
+  <div class="container">
+    <div class="section-label">📋 Legal & Policies</div>
+    <h1 class="legal-title">Transparency &amp; Trust</h1>
+    <p class="legal-subtitle">
+      We believe in being open and honest about how we operate.
+      Everything you need to know is right here.
+    </p>
+  </div>
+</section>
+
+<div class="container legal-layout">
+
+  <!-- Sidebar Tabs -->
+  <aside class="legal-sidebar">
+    <nav class="legal-nav">
+      <button
+        *ngFor="let tab of tabs"
+        class="legal-nav-btn"
+        [class.active]="activeTab === tab.id"
+        (click)="switchTab(tab.id)">
+        <span class="legal-nav-icon">{{ tab.icon }}</span>
+        {{ tab.label }}
+        <span class="legal-nav-arrow" *ngIf="activeTab === tab.id">→</span>
+      </button>
+    </nav>
+
+    <!-- Last updated -->
+    <div class="legal-updated">
+      <span class="legal-updated-label">Last updated</span>
+      <span class="legal-updated-date">{{ getLastUpdated() }}</span>
+    </div>
+  </aside>
+
+  <!-- Content Area -->
+  <main class="legal-content">
+
+    <!-- ── PRIVACY POLICY ────────────────────────── -->
+    <div *ngIf="activeTab === 'privacy'" class="legal-section fade-in">
+      <div class="legal-section-header">
+        <span class="legal-section-icon">🔒</span>
+        <div>
+          <h2 class="legal-section-title">Privacy Policy</h2>
+          <p class="legal-section-sub">How we collect, use, and protect your information.</p>
+        </div>
+      </div>
+
+      <div class="legal-body">
+        <div class="legal-block">
+          <h3>1. Information We Collect</h3>
+          <p>When you register on ThinkFlow, we collect your <strong>username</strong>, <strong>email address</strong>, and <strong>password</strong> (stored securely using bcrypt hashing). We do not collect payment information, phone numbers, or physical addresses.</p>
+          <p>We also automatically collect limited usage data such as page views and the posts you interact with (likes, comments) to improve the platform experience.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>2. How We Use Your Information</h3>
+          <ul>
+            <li>To create and manage your account</li>
+            <li>To display your username on posts and comments you author</li>
+            <li>To send important account-related communications (not marketing)</li>
+            <li>To improve the platform and debug issues</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <h3>3. Data Storage &amp; Security</h3>
+          <p>Your data is stored in a MongoDB database. Passwords are hashed with bcrypt and are never stored in plain text. We use JWT tokens for authentication, which expire after 7 days.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>4. Third-Party Services</h3>
+          <p>ThinkFlow does not sell or share your personal data with third parties. We do not use advertising networks or tracking pixels.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>5. Your Rights</h3>
+          <p>You have the right to access, update, or delete your account information at any time. To request account deletion, contact us at <a routerLink="/contact">our contact page</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TERMS OF SERVICE ──────────────────────── -->
+    <div *ngIf="activeTab === 'terms'" class="legal-section fade-in">
+      <div class="legal-section-header">
+        <span class="legal-section-icon">📄</span>
+        <div>
+          <h2 class="legal-section-title">Terms of Service</h2>
+          <p class="legal-section-sub">The rules and guidelines for using ThinkFlow.</p>
+        </div>
+      </div>
+
+      <div class="legal-body">
+        <div class="legal-block">
+          <h3>1. Acceptance of Terms</h3>
+          <p>By accessing or using ThinkFlow, you agree to be bound by these Terms of Service. If you do not agree, please do not use the platform.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>2. User Accounts</h3>
+          <ul>
+            <li>You must provide accurate information when registering</li>
+            <li>You are responsible for maintaining the security of your account</li>
+            <li>You must be at least 13 years of age to create an account</li>
+            <li>One account per person — multiple accounts are not permitted</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <h3>3. Content Guidelines</h3>
+          <p>All content published on ThinkFlow must:</p>
+          <ul>
+            <li>Be original or properly attributed to sources</li>
+            <li>Not violate any intellectual property rights</li>
+            <li>Not contain hate speech, harassment, or illegal content</li>
+            <li>Not include spam, misleading information, or malware</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <h3>4. Content Ownership</h3>
+          <p>Authors retain ownership of their original content. By publishing on ThinkFlow, you grant us a non-exclusive license to display and distribute your content on the platform.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>5. Account Termination</h3>
+          <p>We reserve the right to suspend or terminate accounts that violate these terms. Users may delete their own accounts at any time by contacting us.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>6. Disclaimer</h3>
+          <p>ThinkFlow is provided "as is." We make no warranties about the availability, accuracy, or reliability of the platform. We are not liable for any damages arising from your use of the service.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COOKIE POLICY ─────────────────────────── -->
+    <div *ngIf="activeTab === 'cookies'" class="legal-section fade-in">
+      <div class="legal-section-header">
+        <span class="legal-section-icon">🍪</span>
+        <div>
+          <h2 class="legal-section-title">Cookie Policy</h2>
+          <p class="legal-section-sub">How we use cookies and local storage.</p>
+        </div>
+      </div>
+
+      <div class="legal-body">
+        <div class="legal-block">
+          <h3>1. What We Store</h3>
+          <p>ThinkFlow uses <strong>browser localStorage</strong> (not traditional cookies) to keep you signed in. We store:</p>
+          <div class="cookie-table-wrap">
+            <table class="cookie-table">
+              <thead>
+                <tr><th>Key</th><th>Purpose</th><th>Expires</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>blog_token</code></td><td>JWT authentication token to keep you logged in</td><td>7 days</td></tr>
+                <tr><td><code>blog_user</code></td><td>Your basic profile info (username, role) for the UI</td><td>7 days</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="legal-block">
+          <h3>2. What We Do NOT Use</h3>
+          <ul>
+            <li>❌ No third-party tracking cookies</li>
+            <li>❌ No advertising or analytics cookies</li>
+            <li>❌ No session cookies shared with external services</li>
+            <li>❌ No fingerprinting or cross-site tracking</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <h3>3. Managing Your Data</h3>
+          <p>You can clear your stored data at any time by signing out of ThinkFlow, or by clearing your browser's localStorage through your browser's developer tools or settings.</p>
+        </div>
+
+        <div class="legal-block">
+          <h3>4. Third-Party Services</h3>
+          <p>ThinkFlow does not load any third-party scripts, analytics services, or advertising networks that would set cookies on your device.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SITEMAP ────────────────────────────────── -->
+    <div *ngIf="activeTab === 'sitemap'" class="legal-section fade-in">
+      <div class="legal-section-header">
+        <span class="legal-section-icon">🗺</span>
+        <div>
+          <h2 class="legal-section-title">Sitemap</h2>
+          <p class="legal-section-sub">A complete map of all pages on ThinkFlow.</p>
+        </div>
+      </div>
+
+      <div class="sitemap-grid">
+
+        <!-- ── Main Pages (auth-aware) ─────────────── -->
+        <div class="sitemap-section">
+          <h3 class="sitemap-section-title">Main Pages</h3>
+          <ul class="sitemap-links">
+            <li>
+              <a routerLink="/" class="sitemap-link">
+                <span class="sitemap-arrow">→</span> Home
+              </a>
+            </li>
+            <li>
+              <a routerLink="/about" class="sitemap-link">
+                <span class="sitemap-arrow">→</span> About Us
+              </a>
+            </li>
+            <li>
+              <a routerLink="/contact" class="sitemap-link">
+                <span class="sitemap-arrow">→</span> Contact
+              </a>
+            </li>
+
+            <!-- Show Dashboard when logged in as admin/author -->
+            <li *ngIf="auth.isLoggedIn && auth.isAuthorOrAdmin">
+              <a routerLink="/admin" class="sitemap-link">
+                <span class="sitemap-arrow">→</span> Dashboard
+              </a>
+            </li>
+
+            <!-- Show Sign In ONLY when NOT logged in -->
+            <li *ngIf="!auth.isLoggedIn">
+              <a routerLink="/login" class="sitemap-link">
+                <span class="sitemap-arrow">→</span> Sign In
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ── Other sections (Categories, Legal) ─── -->
+        <div class="sitemap-section" *ngFor="let section of sitemapSections">
+          <h3 class="sitemap-section-title">{{ section.section }}</h3>
+          <ul class="sitemap-links">
+            <li *ngFor="let link of section.links">
+              <a [routerLink]="link.path" class="sitemap-link">
+                <span class="sitemap-arrow">→</span>
+                {{ link.label }}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
