@@ -89,7 +89,7 @@ export class ProfileComponent implements OnInit {
   buildAvatarUrl(avatar?: string): string {
     if (!avatar) return '';
     if (avatar.startsWith('http')) return avatar;
-    return `http://localhost:5000${avatar}`;
+    return `https://thinkflow-ki0r.onrender.com${avatar}`;
   }
 
   /** Triggered when user clicks the avatar area and picks a file */

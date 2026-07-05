@@ -5,7 +5,7 @@ import { SocialLink } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  private api = 'http://localhost:5000/api/settings';
+  private api = 'https://thinkflow-ki0r.onrender.com/api/settings';
 
   constructor(private http: HttpClient) {}
 

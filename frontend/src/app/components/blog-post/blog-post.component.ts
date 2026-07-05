@@ -64,7 +64,7 @@ export class BlogPostComponent implements OnInit, OnDestroy {
   getAvatarUrl(avatar?: string): string {
     if (!avatar) return '';
     if (avatar.startsWith('http')) return avatar;
-    return `http://localhost:5000${avatar}`;
+    return `https://thinkflow-ki0r.onrender.com${avatar}`;
   }
 
   // ── Tag navigation ─────────────────────────────────────────
@@ -234,6 +234,6 @@ const isColonHeading = /^[A-Z].{2,60}:$/.test(line);
   getImageUrl(path: string): string {
     if (!path) return 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&q=80';
     if (path.startsWith('http')) return path;
-    return `http://localhost:5000${path}`;
+    return `https://thinkflow-ki0r.onrender.com${path}`;
   }
 }

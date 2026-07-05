@@ -95,7 +95,7 @@ export class AboutComponent implements OnInit {
   }
 
   loadStats(): void {
-    this.http.get<any>('http://localhost:5000/api/posts/stats').subscribe({
+    this.http.get<any>('https://thinkflow-ki0r.onrender.com/api/posts/stats').subscribe({
       next: (data) => { this.monthlyReaders = data.monthlyReaders || 0; this.statsLoaded = true; },
       error: () => { this.monthlyReaders = 0; this.statsLoaded = true; }
     });
@@ -139,7 +139,7 @@ export class AboutComponent implements OnInit {
   getAvatarUrl(avatar: string | undefined): string | null {
     if (!avatar || avatar.trim() === '') return null;
     if (avatar.startsWith('http')) return avatar;
-    return `http://localhost:5000${avatar}`;
+    return `https://thinkflow-ki0r.onrender.com${avatar}`;
   }
 
   getMemberSince(createdAt: string): string {

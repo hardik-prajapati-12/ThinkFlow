@@ -6,7 +6,7 @@ import { Message, MessageStats } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MessageService {
-  private api = 'http://localhost:5000/api/messages';
+  private api = 'https://thinkflow-ki0r.onrender.com/api/messages';
 
   constructor(private http: HttpClient) {}
 

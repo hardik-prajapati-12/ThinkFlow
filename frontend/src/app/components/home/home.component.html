@@ -55,7 +55,7 @@
         <!-- Image wrapper with zoom effect -->
         <div class="hcc-image-wrapper">
           <img *ngIf="featuredPosts[0].coverImage; else fallbackCover"
-               [src]="featuredPosts[0].coverImage.startsWith('http') ? featuredPosts[0].coverImage : 'http://localhost:5000' + featuredPosts[0].coverImage"
+               [src]="featuredPosts[0].coverImage.startsWith('http') ? featuredPosts[0].coverImage : 'https://thinkflow-ki0r.onrender.com' + featuredPosts[0].coverImage"
                class="hcc-image"
                [alt]="featuredPosts[0].title">
           <ng-template #fallbackCover>
@@ -73,7 +73,7 @@
           <div class="hcc-footer">
             <div class="hcc-author">
               <img *ngIf="featuredPosts[0].author?.avatar; else authorInitials"
-                   [src]="featuredPosts[0].author.avatar?.startsWith('http') ? featuredPosts[0].author.avatar : 'http://localhost:5000' + featuredPosts[0].author.avatar"
+                   [src]="featuredPosts[0].author.avatar?.startsWith('http') ? featuredPosts[0].author.avatar : 'https://thinkflow-ki0r.onrender.com' + featuredPosts[0].author.avatar"
                    class="hcc-avatar"
                    [alt]="featuredPosts[0].author.username">
               <ng-template #authorInitials>
@@ -208,7 +208,7 @@
         <div class="post-card-footer">
           <div class="post-meta">
             <img *ngIf="post.author.avatar"
-                 [src]="post.author.avatar.startsWith('http') ? post.author.avatar : 'http://localhost:5000' + post.author.avatar"
+                 [src]="post.author.avatar.startsWith('http') ? post.author.avatar : 'https://thinkflow-ki0r.onrender.com' + post.author.avatar"
                  class="meta-avatar meta-avatar-img"
                  [alt]="post.author.username"
                  [class.author-highlight]="searchMatchType === 'author'"

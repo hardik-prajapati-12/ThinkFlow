@@ -6,7 +6,7 @@ import { User, AuthResponse } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api/auth';
+  private apiUrl = 'https://thinkflow-ki0r.onrender.com/api/auth';
   private currentUserSubject = new BehaviorSubject<User | null>(this.loadUser());
   public  currentUser$       = this.currentUserSubject.asObservable();
 

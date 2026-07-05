@@ -116,7 +116,7 @@ ngOnInit(): void {
 }
 
   verifyRoleFromServer(): void {
-  this.http.get<{ user: User }>('http://localhost:5000/api/auth/me').subscribe({
+  this.http.get<{ user: User }>('https://thinkflow-ki0r.onrender.com/api/auth/me').subscribe({
     next: (res) => {
       if (res.user.role !== this.auth.currentUser?.role) {
         localStorage.setItem('blog_user', JSON.stringify(res.user));
@@ -189,7 +189,7 @@ private applyTabFromQueryParam(): void {
   // ── Overview ──────────────────────────────────────────────
   loadOverview(): void {
     this.overviewLoading = true;
-    this.http.get<any>('http://localhost:5000/api/stats/overview').subscribe({
+    this.http.get<any>('https://thinkflow-ki0r.onrender.com/api/stats/overview').subscribe({
       next: (data) => {
         this.overviewStats   = data;
         this.topPosts        = data.topPosts || [];
@@ -724,7 +724,7 @@ private applyTabFromQueryParam(): void {
       category: post.category?._id || '', tags: post.tags?.join(', ') || '', status: post.status
     });
     this.previewUrl = post.coverImage
-      ? (post.coverImage.startsWith('http') ? post.coverImage : `http://localhost:5000${post.coverImage}`)
+      ? (post.coverImage.startsWith('http') ? post.coverImage : `https://thinkflow-ki0r.onrender.com${post.coverImage}`)
       : '';
     this.activeTab = 'create';
     if (this.categories.length === 0) this.loadCategories();

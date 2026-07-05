@@ -80,7 +80,7 @@
           <img
             [src]="auth.currentUser?.avatar?.startsWith('http')
               ? auth.currentUser?.avatar
-              : 'http://localhost:5000' + auth.currentUser?.avatar"
+              : 'https://thinkflow-ki0r.onrender.com' + auth.currentUser?.avatar"
             class="admin-avatar-img"
             [alt]="auth.currentUser?.username"
             onerror="this.style.display='none'">
@@ -391,7 +391,7 @@
               <td class="td-image">
                 <div class="post-img-thumb">
                   <img *ngIf="post.coverImage; else noThumb" 
-                       [src]="post.coverImage.startsWith('http') ? post.coverImage : 'http://localhost:5000' + post.coverImage" 
+                       [src]="post.coverImage.startsWith('http') ? post.coverImage : 'https://thinkflow-ki0r.onrender.com' + post.coverImage" 
                        class="thumb-img" 
                        alt="Thumb">
                   <ng-template #noThumb>

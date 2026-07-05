@@ -32,7 +32,7 @@ export class ResetPasswordComponent implements OnInit {
   showNew     = false;
   showConfirm = false;
 
-  private api = 'http://localhost:5000/api/auth';
+  private api = 'https://thinkflow-ki0r.onrender.com/api/auth';
 
   constructor(
     private fb:     FormBuilder,

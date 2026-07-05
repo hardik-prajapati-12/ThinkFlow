@@ -143,6 +143,6 @@ export class HomeComponent implements OnInit {
   getImageUrl(imagePath: string): string {
     if (!imagePath) return 'assets/default-cover.jpg';
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `https://thinkflow-ki0r.onrender.com${imagePath}`;
   }
 }

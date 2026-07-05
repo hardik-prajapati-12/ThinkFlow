@@ -1,12 +1,12 @@
 {
   "/api": {
-    "target": "http://localhost:5000",
+    "target": "https://thinkflow-ki0r.onrender.com",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "info"
   },
   "/uploads": {
-    "target": "http://localhost:5000",
+    "target": "https://thinkflow-ki0r.onrender.com",
     "secure": false,
     "changeOrigin": true
   }
