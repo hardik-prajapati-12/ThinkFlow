@@ -4,33 +4,11 @@ const router  = express.Router();
 const jwt     = require('jsonwebtoken');
 const User    = require('../models/User');
 const { protect, adminOnly } = require('../middleware/auth');
-const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
+const avatarUpload = require('../middleware/avatarUpload');
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-// ── Multer: Avatar Upload ────────────────────────────────────
-const avatarStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '..', 'uploads', 'avatars');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `avatar-${req.user._id}-${Date.now()}${ext}`);
-  }
-});
-
-const avatarUpload = multer({
-  storage: avatarStorage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Only image files are allowed.'));
-  }
-});
 
 // ── POST /api/auth/register ──────────────────────────────────
 router.post('/register', async (req, res) => {
@@ -98,8 +76,8 @@ router.post('/avatar', protect, avatarUpload.single('avatar'), async (req, res) 
       }
     }
 
-    // Store path relative to server root (e.g. /uploads/avatars/avatar-xxx.jpg)
-    const avatarPath = '/uploads/avatars/' + req.file.filename;
+    // Store Cloudinary secure URL
+    const avatarPath = req.file.path;
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { avatar: avatarPath },
