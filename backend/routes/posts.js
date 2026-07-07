@@ -3,23 +3,8 @@ const express  = require('express');
 const router   = express.Router();
 const Post     = require('../models/Post');
 const { protect, adminOnly, authorOrAdmin, canManagePost } = require('../middleware/auth');
-const multer   = require('multer');
-const path     = require('path');
-const fs       = require('fs');
 const mongoose = require('mongoose');
-
-// ── Multer config ─────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'uploads/';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload   = require('../middleware/upload');
 
 
 // ══════════════════════════════════════════════════════════════
@@ -203,7 +188,7 @@ router.get('/:slug', async (req, res) => {
 router.post('/', protect, authorOrAdmin, upload.single('coverImage'), async (req, res) => {
   try {
     const { title, content, excerpt, category, tags, status } = req.body;
-    const coverImage = req.file ? `/uploads/${req.file.filename}` : '';
+    const coverImage = req.file ? req.file.path : '';
     const post = await Post.create({
       title, content, excerpt, category,
       tags: tags ? JSON.parse(tags) : [],
@@ -228,7 +213,7 @@ router.put('/:id', protect, authorOrAdmin, upload.single('coverImage'), async (r
     const { title, content, excerpt, category, tags, status } = req.body;
     const update = { title, content, excerpt, category, status,
       tags: tags ? JSON.parse(tags) : [] };
-    if (req.file) update.coverImage = `/uploads/${req.file.filename}`;
+    if (req.file) update.coverImage = req.file.path;
     if (req.body.removeCoverImage === 'true') update.coverImage = '';
 
     const updated = await Post.findByIdAndUpdate(req.params.id, update,
